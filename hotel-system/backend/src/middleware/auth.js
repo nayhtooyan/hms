@@ -1,0 +1,90 @@
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+
+const rolePermissions = {
+  admin: ["*"],
+
+  manager: ["rooms.*", "reservations.*"],
+
+  reception: [
+    "rooms.view",
+    "reservations.view",
+    "reservations.create",
+    "reservations.checkin",
+    "reservations.checkout",
+    "reservations.cancel"
+  ],
+
+  cleaner: ["rooms.view"],
+
+  maintenance: ["rooms.view"]
+};
+
+const hasPermission = (user, permission) => {
+  const permissions = user.permissions?.length
+    ? user.permissions
+    : rolePermissions[user.role] || [];
+
+  if (permissions.includes("*")) return true;
+
+  if (permissions.includes(permission)) return true;
+
+  return permissions.some((p) => {
+    if (!p.endsWith(".*")) return false;
+
+    const prefix = p.slice(0, -1);
+
+    return permission.startsWith(prefix);
+  });
+};
+
+const authenticate = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization || "";
+
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
+
+    if (!token) {
+      return res.status(401).json({
+        message: "No token provided"
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.sub);
+
+    if (!user || !user.active) {
+      return res.status(401).json({
+        message: "Unauthorized"
+      });
+    }
+
+    req.user = user;
+
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      message: "Unauthorized"
+    });
+  }
+};
+
+const requirePermission = (permission) => {
+  return (req, res, next) => {
+    if (!hasPermission(req.user, permission)) {
+      return res.status(403).json({
+        message: "Forbidden"
+      });
+    }
+
+    next();
+  };
+};
+
+module.exports = {
+  authenticate,
+  requirePermission
+};
