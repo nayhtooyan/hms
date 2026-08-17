@@ -13,6 +13,7 @@ import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Rooms from "./pages/Rooms.jsx";
 import Reservations from "./pages/Reservations.jsx";
+import Vouchers from "./pages/Vouchers.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -39,6 +40,7 @@ function Layout() {
         <Link to="/">Dashboard</Link>
         <Link to="/rooms">Rooms</Link>
         <Link to="/reservations">Reservations</Link>
+        <Link to="/vouchers">Vouchers</Link>
 
         <div style={{ marginLeft: "auto" }}>
           {user?.name} - {user?.role}
@@ -71,6 +73,7 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="rooms" element={<Rooms />} />
             <Route path="reservations" element={<Reservations />} />
+            <Route path="vouchers" element={<Vouchers />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -1,5 +1,6 @@
 const Reservation = require("../models/Reservation");
 const Room = require("../models/Room");
+const Voucher = require("../models/Voucher"); // Added for voucher support
 
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -69,7 +70,8 @@ const createReservation = asyncHandler(async (req, res) => {
     scheduledCheckOut,
     adults,
     children,
-    extraBeds
+    extraBeds,
+    voucherId // Added for voucher support
   } = req.body;
 
   if (!roomId || !scheduledCheckIn || !scheduledCheckOut) {
@@ -116,13 +118,39 @@ const createReservation = asyncHandler(async (req, res) => {
   );
 
   const extraBedsCount = Number(extraBeds || 0);
-
   const roomCharge = nights * Number(room.basePrice || 0);
+  const extraBedCharge = extraBedsCount * nights * Number(room.extraBedPrice || 0);
+  
+  let subtotal = roomCharge + extraBedCharge;
+  let voucherDiscount = 0;
+  let appliedVoucherId = null;
+  let appliedVoucherCode = "";
 
-  const extraBedCharge =
-    extraBedsCount * nights * Number(room.extraBedPrice || 0);
+  // Apply Voucher if provided
+  if (voucherId) {
+    const voucher = await Voucher.findById(voucherId);
+    if (voucher && voucher.active) {
+      if (voucher.type === "fixed") {
+        voucherDiscount = voucher.value;
+      } else if (voucher.type === "percentage") {
+        voucherDiscount = subtotal * (voucher.value / 100);
+        if (voucher.maxDiscount > 0 && voucherDiscount > voucher.maxDiscount) {
+          voucherDiscount = voucher.maxDiscount;
+        }
+      }
+      
+      // Ensure discount doesn't exceed subtotal
+      if (voucherDiscount > subtotal) voucherDiscount = subtotal;
+      
+      appliedVoucherId = voucher._id;
+      appliedVoucherCode = voucher.code;
+      
+      // Increment usage count
+      await Voucher.findByIdAndUpdate(voucher._id, { $inc: { usedCount: 1 } });
+    }
+  }
 
-  const total = roomCharge + extraBedCharge;
+  const total = subtotal - voucherDiscount;
 
   const reservation = await Reservation.create({
     bookingNo: generateBookingNo(),
@@ -135,12 +163,15 @@ const createReservation = asyncHandler(async (req, res) => {
     adults: Number(adults || 1),
     children: Number(children || 0),
     extraBeds: extraBedsCount,
+    voucherId: appliedVoucherId,
+    voucherCode: appliedVoucherCode,
     priceSnapshot: {
       nights,
       roomCharge,
       extraBedCharge,
       overtimeCharge: 0,
-      total,
+      voucherDiscount: Math.round(voucherDiscount * 100) / 100,
+      total: Math.round(total * 100) / 100,
       currency: "USD"
     },
     createdBy: req.user._id
@@ -227,10 +258,12 @@ const checkOutReservation = asyncHandler(async (req, res) => {
 
   reservation.priceSnapshot.overtimeCharge = overtimeCharge;
 
+  // FIXED: Added subtraction of voucherDiscount so the guest keeps their discount at checkout
   reservation.priceSnapshot.total =
     Number(reservation.priceSnapshot.roomCharge || 0) +
     Number(reservation.priceSnapshot.extraBedCharge || 0) +
-    Number(overtimeCharge);
+    Number(overtimeCharge) -
+    Number(reservation.priceSnapshot.voucherDiscount || 0);
 
   await reservation.save();
 
