@@ -15,7 +15,7 @@ const reservationSchema = new mongoose.Schema(
     children: { type: Number, default: 0 },
     extraBeds: { type: Number, default: 0 },
     
-    // NEW: Voucher tracking
+    // Voucher tracking
     voucherId: { type: mongoose.Schema.Types.ObjectId, ref: "Voucher" },
     voucherCode: { type: String }, // Keep a text copy in case voucher is deleted later
 
@@ -24,7 +24,7 @@ const reservationSchema = new mongoose.Schema(
       roomCharge: Number,
       extraBedCharge: Number,
       overtimeCharge: { type: Number, default: 0 },
-      voucherDiscount: { type: Number, default: 0 }, // NEW
+      voucherDiscount: { type: Number, default: 0 }, 
       total: Number,
       currency: { type: String, default: "USD" }
     },

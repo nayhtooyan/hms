@@ -56,10 +56,10 @@ export default function Reservations() {
     try {
       const res = await api.post("/vouchers/validate", { code: voucherCode, subtotal });
       setAppliedVoucher(res.data);
-      setVoucherMsg(`✅ Applied: -$${res.data.discount}`);
+      setVoucherMsg(`Applied: -$${res.data.discount}`);
     } catch (err) {
       setAppliedVoucher(null);
-      setVoucherMsg(`❌ ${err.response?.data?.message || "Invalid code"}`);
+      setVoucherMsg(`${err.response?.data?.message || "Invalid code"}`);
     }
   };
 

@@ -16,11 +16,11 @@ const voucherSchema = new mongoose.Schema(
     },
     value: {
       type: Number,
-      required: true // e.g., 50 for $50 off, or 20 for 20% off
+      required: true // e.g. 50 for $50 off, or 20 for 20% off
     },
     maxDiscount: {
       type: Number,
-      default: 0 // Useful for percentage vouchers (e.g., max $100 off)
+      default: 0 // Useful for percentage vouchers (e.g. max $100 off)
     },
     validFrom: {
       type: Date,
