@@ -14,6 +14,8 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Rooms from "./pages/Rooms.jsx";
 import Reservations from "./pages/Reservations.jsx";
 import Vouchers from "./pages/Vouchers.jsx";
+import Payments from "./pages/Payments.jsx";
+import Invoice from "./pages/Invoice.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -41,6 +43,7 @@ function Layout() {
         <Link to="/rooms">Rooms</Link>
         <Link to="/reservations">Reservations</Link>
         <Link to="/vouchers">Vouchers</Link>
+        <Link to="/payments">Payments</Link>
 
         <div style={{ marginLeft: "auto" }}>
           {user?.name} - {user?.role}
@@ -74,6 +77,8 @@ export default function App() {
             <Route path="rooms" element={<Rooms />} />
             <Route path="reservations" element={<Reservations />} />
             <Route path="vouchers" element={<Vouchers />} />
+            <Route path="payments" element={<Payments />} />
+            <Route path="invoice/:reservationId" element={<Invoice />} />
           </Route>
         </Routes>
       </BrowserRouter>

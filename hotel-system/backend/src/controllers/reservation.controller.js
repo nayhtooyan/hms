@@ -258,7 +258,6 @@ const checkOutReservation = asyncHandler(async (req, res) => {
 
   reservation.priceSnapshot.overtimeCharge = overtimeCharge;
 
-  // FIXED: Added subtraction of voucherDiscount so the guest keeps their discount at checkout
   reservation.priceSnapshot.total =
     Number(reservation.priceSnapshot.roomCharge || 0) +
     Number(reservation.priceSnapshot.extraBedCharge || 0) +

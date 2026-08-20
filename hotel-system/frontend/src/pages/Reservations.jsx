@@ -92,7 +92,7 @@ export default function Reservations() {
     }
   };
 
-  // ... (Keep checkIn, checkOut, cancelReservation functions exactly as they were in Part 1) ...
+  // 
   const checkIn = async (id) => { await api.post(`/reservations/${id}/check-in`); loadReservations(); };
   const checkOut = async (id) => { await api.post(`/reservations/${id}/check-out`); loadReservations(); };
   const cancelReservation = async (id) => { await api.post(`/reservations/${id}/cancel`, {}); loadReservations(); };

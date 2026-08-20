@@ -5,6 +5,7 @@ const voucherRoutes = require("./routes/voucher.routes");
 const authRoutes = require("./routes/auth.routes");
 const roomRoutes = require("./routes/room.routes");
 const reservationRoutes = require("./routes/reservation.routes");
+const paymentRoutes = require("./routes/payment.routes");
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/vouchers", voucherRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

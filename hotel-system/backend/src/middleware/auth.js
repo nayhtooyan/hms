@@ -4,7 +4,12 @@ const User = require("../models/User");
 const rolePermissions = {
   admin: ["*"],
 
-  manager: ["rooms.*", "reservations.*" ,"vouchers.*"],
+  manager: [
+    "rooms.*",
+    "reservations.*",
+    "vouchers.*",
+    "payments.*"
+  ],
 
   reception: [
     "rooms.view",
@@ -13,8 +18,10 @@ const rolePermissions = {
     "reservations.checkin",
     "reservations.checkout",
     "reservations.cancel",
-    "vouchers.view",        
-    "vouchers.validate"
+    "vouchers.view",
+    "vouchers.validate",
+    "payments.view",
+    "payments.create"
   ],
 
   cleaner: ["rooms.view"],
