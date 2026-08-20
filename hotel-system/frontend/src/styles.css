@@ -118,3 +118,58 @@ td {
     border: 1px solid #ddd;
   }
 }
+
+.room-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.room-card {
+  border-radius: 12px;
+  padding: 12px;
+  color: white;
+  cursor: pointer;
+  min-height: 130px;
+}
+
+.room-card.selected {
+  outline: 3px solid #111827;
+}
+
+.room-card h3 {
+  margin: 0 0 8px 0;
+}
+
+.room-status-label {
+  margin-top: 8px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.status-available {
+  background: #16a34a;
+}
+
+.status-occupied {
+  background: #dc2626;
+}
+
+.status-reserved {
+  background: #2563eb;
+}
+
+.status-cleaning {
+  background: #f59e0b;
+  color: #111827;
+}
+
+.status-maintenance {
+  background: #f97316;
+}
+
+.status-blocked {
+  background: #6b7280;
+}

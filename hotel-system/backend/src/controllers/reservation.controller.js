@@ -1,6 +1,7 @@
 const Reservation = require("../models/Reservation");
 const Room = require("../models/Room");
 const Voucher = require("../models/Voucher"); // Added for voucher support
+const HousekeepingTask = require("../models/HousekeepingTask");
 
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -267,7 +268,16 @@ const checkOutReservation = asyncHandler(async (req, res) => {
   await reservation.save();
 
   await Room.findByIdAndUpdate(reservation.roomId, {
-    status: "cleaning"
+  status: "cleaning"
+});
+
+  await HousekeepingTask.create({
+    roomId: reservation.roomId,
+    type: "cleaning",
+    priority: "high",
+    status: "pending",
+    notes: "Auto-created after checkout",
+    createdBy: req.user._id
   });
 
   const populated = await reservation.populate(

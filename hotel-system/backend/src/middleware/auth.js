@@ -8,7 +8,9 @@ const rolePermissions = {
     "rooms.*",
     "reservations.*",
     "vouchers.*",
-    "payments.*"
+    "payments.*",
+    "housekeeping.*",
+    "users.view"
   ],
 
   reception: [
@@ -21,12 +23,21 @@ const rolePermissions = {
     "vouchers.view",
     "vouchers.validate",
     "payments.view",
-    "payments.create"
+    "payments.create",
+    "housekeeping.view"
   ],
 
-  cleaner: ["rooms.view"],
+  cleaner: [
+    "rooms.view",
+    "housekeeping.view",
+    "housekeeping.update"
+  ],
 
-  maintenance: ["rooms.view"]
+  maintenance: [
+    "rooms.view",
+    "housekeeping.view",
+    "housekeeping.update"
+  ]
 };
 
 const hasPermission = (user, permission) => {
@@ -81,9 +92,17 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-const requirePermission = (permission) => {
+const requirePermission = (permissions) => {
+  const requiredPermissions = Array.isArray(permissions)
+    ? permissions
+    : [permissions];
+
   return (req, res, next) => {
-    if (!hasPermission(req.user, permission)) {
+    const allowed = requiredPermissions.some((permission) =>
+      hasPermission(req.user, permission)
+    );
+
+    if (!allowed) {
       return res.status(403).json({
         message: "Forbidden"
       });
