@@ -8,6 +8,7 @@ const reservationRoutes = require("./routes/reservation.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const housekeepingRoutes = require("./routes/housekeeping.routes");
 const userRoutes = require("./routes/user.routes");
+const dashboardRoutes = require("./routes/dashboard.routes");
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use("/api/vouchers", voucherRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/housekeeping", housekeepingRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

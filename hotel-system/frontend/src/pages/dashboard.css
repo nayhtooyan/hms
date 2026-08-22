@@ -1,0 +1,403 @@
+.advanced-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Card */
+.ad-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Header */
+.ad-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ad-header h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.ad-subtitle {
+  color: #6b7280;
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.ad-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ad-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.ad-btn:hover {
+  opacity: 0.9;
+}
+
+.ad-btn-primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+
+.ad-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Alert */
+.ad-alert-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+/* KPI Grid */
+.ad-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .ad-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .ad-kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1600px) {
+  .ad-kpi-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Stat Cards */
+.ad-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ad-stat-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ad-stat-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f3f4f6;
+  font-size: 18px;
+}
+
+.ad-stat-label {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.ad-stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  word-break: break-word;
+}
+
+@media (max-width: 480px) {
+  .ad-stat-value {
+    font-size: 22px;
+  }
+}
+
+/* Stat tone colors */
+.ad-stat-green .ad-stat-value {
+  color: #16a34a;
+}
+
+.ad-stat-red .ad-stat-value {
+  color: #dc2626;
+}
+
+.ad-stat-blue .ad-stat-value {
+  color: #2563eb;
+}
+
+.ad-stat-amber .ad-stat-value {
+  color: #d97706;
+}
+
+.ad-stat-orange .ad-stat-value {
+  color: #ea580c;
+}
+
+.ad-stat-gray .ad-stat-value {
+  color: #4b5563;
+}
+
+.ad-stat-purple .ad-stat-value {
+  color: #7c3aed;
+}
+
+/* Progress bar */
+.ad-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.ad-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #7c3aed;
+  transition: width 0.3s ease;
+}
+
+/* Content Grid */
+.ad-content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .ad-content-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1500px) {
+  .ad-content-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Section Card Header */
+.ad-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ad-card-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.ad-count {
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Empty state */
+.ad-empty {
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1px dashed #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+/* Table */
+.ad-table-wrap {
+  overflow-x: auto;
+}
+
+.ad-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ad-table th,
+.ad-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.ad-table th {
+  color: #6b7280;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ad-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Badges */
+.ad-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.ad-badge-green {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ad-badge-blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.ad-badge-red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.ad-badge-amber {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ad-badge-orange {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.ad-badge-gray {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.ad-badge-purple {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+/* Money colors */
+.ad-positive {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.ad-negative {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* Responsive table: convert to cards on mobile */
+@media (max-width: 720px) {
+  .ad-table-wrap {
+    overflow-x: visible;
+  }
+
+  .ad-table thead {
+    display: none;
+  }
+
+  .ad-table,
+  .ad-table tbody,
+  .ad-table tr,
+  .ad-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .ad-table tr {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: #ffffff;
+  }
+
+  .ad-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    border-bottom: none;
+    padding: 8px 0;
+    text-align: right;
+  }
+
+  .ad-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
+  }
+
+  .ad-table tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+/* Make global app header more responsive */
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 10px;
+  }
+
+  header div[style] {
+    margin-left: 0 !important;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  main {
+    padding: 12px;
+  }
+}
