@@ -2,12 +2,12 @@ import {
   BrowserRouter,
   Routes,
   Route,
-  Navigate,
-  Link,
-  Outlet
+  Navigate
 } from "react-router-dom";
 
 import { AuthProvider, useAuth } from "./AuthContext";
+
+import AppLayout from "./components/AppLayout.jsx";
 
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -33,35 +33,6 @@ function Protected({ children }) {
   return children;
 }
 
-function Layout() {
-  const { user, logout } = useAuth();
-
-  return (
-    <div>
-      <header>
-        <strong>Hotel System</strong>
-
-        <Link to="/">Dashboard</Link>
-        <Link to="/room-board">Room Board</Link>
-        <Link to="/rooms">Rooms</Link>
-        <Link to="/reservations">Reservations</Link>
-        <Link to="/vouchers">Vouchers</Link>
-        <Link to="/payments">Payments</Link>
-        <Link to="/housekeeping">Housekeeping</Link>
-
-        <div style={{ marginLeft: "auto" }}>
-          {user?.name} - {user?.role}
-          <button onClick={logout}>Logout</button>
-        </div>
-      </header>
-
-      <main>
-        <Outlet />
-      </main>
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <AuthProvider>
@@ -73,7 +44,7 @@ export default function App() {
             path="/"
             element={
               <Protected>
-                <Layout />
+                <AppLayout />
               </Protected>
             }
           >
@@ -85,6 +56,8 @@ export default function App() {
             <Route path="payments" element={<Payments />} />
             <Route path="invoice/:reservationId" element={<Invoice />} />
             <Route path="housekeeping" element={<Housekeeping />} />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
       </BrowserRouter>
