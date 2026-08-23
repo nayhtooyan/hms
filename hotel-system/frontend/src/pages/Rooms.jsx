@@ -2,26 +2,29 @@ import { useEffect, useState } from "react";
 
 import api from "../api";
 
+import ResponsiveTable from "../components/ResponsiveTable.jsx";
+
 export default function Rooms() {
   const [rooms, setRooms] = useState([]);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     roomNumber: "",
     floor: "",
     roomType: "Standard",
-    basePrice: 0,
-    extraBedPrice: 0,
-    overtimeHourlyRate: 0
+    basePrice: "",
+    extraBedPrice: "",
+    overtimeHourlyRate: ""
   });
 
   const loadRooms = async () => {
     try {
-      const res = await api.get("/rooms");
+      const response = await api.get("/rooms");
 
-      setRooms(res.data);
-    } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to load rooms");
+      setRooms(response.data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load rooms");
     }
   };
 
@@ -40,6 +43,9 @@ export default function Rooms() {
     e.preventDefault();
 
     try {
+      setMessage("");
+      setError("");
+
       const payload = {
         roomNumber: form.roomNumber,
         floor: form.floor ? Number(form.floor) : 1,
@@ -51,126 +57,197 @@ export default function Rooms() {
 
       await api.post("/rooms", payload);
 
-      setMessage("Room created");
+      setMessage("Room created successfully");
 
       setForm({
         roomNumber: "",
         floor: "",
         roomType: "Standard",
-        basePrice: 0,
-        extraBedPrice: 0,
-        overtimeHourlyRate: 0
+        basePrice: "",
+        extraBedPrice: "",
+        overtimeHourlyRate: ""
       });
 
       loadRooms();
-    } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to create room");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create room");
     }
   };
 
   const disableRoom = async (id) => {
     try {
+      setMessage("");
+      setError("");
+
       await api.delete(`/rooms/${id}`);
 
       setMessage("Room disabled");
 
       loadRooms();
-    } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to disable room");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to disable room");
     }
   };
 
+  const columns = [
+    {
+      key: "roomNumber",
+      label: "Room"
+    },
+    {
+      key: "floor",
+      label: "Floor"
+    },
+    {
+      key: "roomType",
+      label: "Type"
+    },
+    {
+      key: "status",
+      label: "Status"
+    },
+    {
+      key: "basePrice",
+      label: "Price",
+      render: (room) => `$${Number(room.basePrice || 0)}`
+    },
+    {
+      key: "active",
+      label: "Active",
+      render: (room) => (room.active ? "Yes" : "No")
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (room) => (
+        <div className="action-stack">
+          {room.active ? (
+            <button
+              className="btn btn-danger"
+              onClick={() => disableRoom(room._id)}
+            >
+              Disable
+            </button>
+          ) : (
+            <span>-</span>
+          )}
+        </div>
+      )
+    }
+  ];
+
   return (
-    <div>
-      <div className="card">
-        <h2>Add Room</h2>
+    <div className="page">
+      <div className="page-card">
+        <div className="page-header">
+          <div>
+            <h2 className="page-title">Add Room</h2>
 
-        {message ? <div>{message}</div> : null}
+            <div className="page-subtitle">
+              Create a new room for reservations.
+            </div>
+          </div>
+        </div>
 
-        <form onSubmit={createRoom}>
-          <input
-            name="roomNumber"
-            placeholder="Room Number"
-            value={form.roomNumber}
-            onChange={handleChange}
-          />
+        {message ? <div className="alert alert-success">{message}</div> : null}
+        {error ? <div className="alert alert-error">{error}</div> : null}
 
-          <input
-            name="floor"
-            placeholder="Floor"
-            value={form.floor}
-            onChange={handleChange}
-          />
+        <form onSubmit={createRoom} className="form-grid">
+          <div className="form-field">
+            <label>Room Number</label>
 
-          <input
-            name="roomType"
-            placeholder="Room Type"
-            value={form.roomType}
-            onChange={handleChange}
-          />
+            <input
+              name="roomNumber"
+              placeholder="Example: 101"
+              value={form.roomNumber}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
-          <input
-            name="basePrice"
-            type="number"
-            placeholder="Base Price"
-            value={form.basePrice}
-            onChange={handleChange}
-          />
+          <div className="form-field">
+            <label>Floor</label>
 
-          <input
-            name="extraBedPrice"
-            type="number"
-            placeholder="Extra Bed Price"
-            value={form.extraBedPrice}
-            onChange={handleChange}
-          />
+            <input
+              type="number"
+              name="floor"
+              placeholder="Example: 1"
+              value={form.floor}
+              onChange={handleChange}
+            />
+          </div>
 
-          <input
-            name="overtimeHourlyRate"
-            type="number"
-            placeholder="Overtime Hourly Rate"
-            value={form.overtimeHourlyRate}
-            onChange={handleChange}
-          />
+          <div className="form-field">
+            <label>Room Type</label>
 
-          <button type="submit">Create Room</button>
+            <input
+              name="roomType"
+              placeholder="Example: Deluxe"
+              value={form.roomType}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Base Price</label>
+
+            <input
+              type="number"
+              name="basePrice"
+              placeholder="Example: 100"
+              value={form.basePrice}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Extra Bed Price</label>
+
+            <input
+              type="number"
+              name="extraBedPrice"
+              placeholder="Example: 20"
+              value={form.extraBedPrice}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Overtime Hourly Rate</label>
+
+            <input
+              type="number"
+              name="overtimeHourlyRate"
+              placeholder="Example: 10"
+              value={form.overtimeHourlyRate}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">
+              Create Room
+            </button>
+          </div>
         </form>
       </div>
 
-      <div className="card">
-        <h2>Rooms</h2>
+      <div className="page-card">
+        <div className="page-header">
+          <div>
+            <h2 className="page-title">Rooms</h2>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Room</th>
-              <th>Floor</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Price</th>
-              <th>Active</th>
-              <th>Action</th>
-            </tr>
-          </thead>
+            <div className="page-subtitle">
+              Manage hotel rooms.
+            </div>
+          </div>
+        </div>
 
-          <tbody>
-            {rooms.map((room) => (
-              <tr key={room._id}>
-                <td>{room.roomNumber}</td>
-                <td>{room.floor}</td>
-                <td>{room.roomType}</td>
-                <td>{room.status}</td>
-                <td>{room.basePrice}</td>
-                <td>{room.active ? "Yes" : "No"}</td>
-                <td>
-                  <button onClick={() => disableRoom(room._id)}>
-                    Disable
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ResponsiveTable
+          columns={columns}
+          data={rooms}
+          emptyMessage="No rooms found."
+        />
       </div>
     </div>
   );

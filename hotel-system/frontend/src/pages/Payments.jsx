@@ -3,6 +3,12 @@ import { Link } from "react-router-dom";
 
 import api from "../api";
 
+import ResponsiveTable from "../components/ResponsiveTable.jsx";
+
+const formatMoney = (value) => {
+  return `$${Number(value || 0).toFixed(2)}`;
+};
+
 const formatDateTime = (value) => {
   if (!value) return "-";
 
@@ -18,6 +24,7 @@ const formatDateTime = (value) => {
 export default function Payments() {
   const [reservations, setReservations] = useState([]);
   const [payments, setPayments] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -44,7 +51,7 @@ export default function Payments() {
       setReservations(reservationResponse.data);
       setPayments(paymentResponse.data);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to load data");
+      setError(err.response?.data?.message || "Failed to load payments");
     } finally {
       setLoading(false);
     }
@@ -57,14 +64,17 @@ export default function Payments() {
   const getPaidAmount = (reservationId) => {
     return payments
       .filter((payment) => {
-        const paymentReservationId = payment.reservationId?._id || payment.reservationId;
+        const paymentReservationId =
+          payment.reservationId?._id || payment.reservationId;
 
         return (
           payment.status === "completed" &&
           String(paymentReservationId) === String(reservationId)
         );
       })
-      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+      .reduce((sum, payment) => {
+        return sum + Number(payment.amount || 0);
+      }, 0);
   };
 
   const openPaymentForm = (reservation) => {
@@ -87,8 +97,13 @@ export default function Payments() {
 
   const closePaymentForm = () => {
     setSelectedReservation(null);
-    setMessage("");
-    setError("");
+
+    setPaymentForm({
+      amount: "",
+      method: "cash",
+      reference: "",
+      note: ""
+    });
   };
 
   const handlePaymentChange = (e) => {
@@ -117,183 +132,251 @@ export default function Payments() {
 
       setMessage("Payment recorded successfully");
 
-      setSelectedReservation(null);
-
-      setPaymentForm({
-        amount: "",
-        method: "cash",
-        reference: "",
-        note: ""
-      });
+      closePaymentForm();
 
       loadData();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Payment failed");
+      setError(err.response?.data?.message || "Payment failed");
     }
   };
 
+  const reservationColumns = [
+    {
+      key: "bookingNo",
+      label: "Booking"
+    },
+    {
+      key: "room",
+      label: "Room",
+      render: (row) => row.roomId?.roomNumber || "-"
+    },
+    {
+      key: "guest",
+      label: "Guest",
+      render: (row) => row.guest?.name || "-"
+    },
+    {
+      key: "status",
+      label: "Status"
+    },
+    {
+      key: "total",
+      label: "Total",
+      render: (row) => formatMoney(row.priceSnapshot?.total)
+    },
+    {
+      key: "paid",
+      label: "Paid",
+      render: (row) => formatMoney(getPaidAmount(row._id))
+    },
+    {
+      key: "balance",
+      label: "Balance",
+      render: (row) => {
+        const total = Number(row.priceSnapshot?.total || 0);
+        const paid = getPaidAmount(row._id);
+        const balance = total - paid;
+
+        return (
+          <span className={balance > 0 ? "ad-negative" : "ad-positive"}>
+            {formatMoney(balance)}
+          </span>
+        );
+      }
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (row) => {
+        const total = Number(row.priceSnapshot?.total || 0);
+        const paid = getPaidAmount(row._id);
+        const balance = total - paid;
+
+        return (
+          <div className="action-stack">
+            {balance > 0 && row.status !== "cancelled" ? (
+              <button
+                className="btn btn-primary"
+                onClick={() => openPaymentForm(row)}
+              >
+                Pay
+              </button>
+            ) : null}
+
+            <Link
+              className="btn-link"
+              to={`/invoice/${row._id}`}
+            >
+              Invoice
+            </Link>
+          </div>
+        );
+      }
+    }
+  ];
+
+  const paymentColumns = [
+    {
+      key: "receiptNo",
+      label: "Receipt"
+    },
+    {
+      key: "booking",
+      label: "Booking",
+      render: (row) => row.reservationId?.bookingNo || "-"
+    },
+    {
+      key: "room",
+      label: "Room",
+      render: (row) => row.reservationId?.roomId?.roomNumber || "-"
+    },
+    {
+      key: "method",
+      label: "Method"
+    },
+    {
+      key: "amount",
+      label: "Amount",
+      render: (row) => formatMoney(row.amount)
+    },
+    {
+      key: "createdAt",
+      label: "Date",
+      render: (row) => formatDateTime(row.createdAt)
+    }
+  ];
+
   return (
-    <div>
-      <div className="card">
-        <h2>Payments</h2>
+    <div className="page">
+      <div className="page-card">
+        <div className="page-header">
+          <div>
+            <h2 className="page-title">Payments</h2>
+
+            <div className="page-subtitle">
+              Record payments and view balances.
+            </div>
+          </div>
+        </div>
 
         {loading ? <div>Loading...</div> : null}
 
-        {message ? <div className="success">{message}</div> : null}
-        {error ? <div className="error">{error}</div> : null}
+        {message ? <div className="alert alert-success">{message}</div> : null}
+        {error ? <div className="alert alert-error">{error}</div> : null}
       </div>
 
       {selectedReservation ? (
-        <div className="card">
-          <h2>Record Payment</h2>
+        <div className="page-card">
+          <div className="page-header">
+            <div>
+              <h2 className="page-title">Record Payment</h2>
 
-          <p>
-            <strong>Booking:</strong> {selectedReservation.bookingNo}
-          </p>
+              <div className="page-subtitle">
+                Booking: {selectedReservation.bookingNo}
+              </div>
+            </div>
 
-          <p>
-            <strong>Guest:</strong> {selectedReservation.guest?.name || "-"}
-          </p>
-
-          <p>
-            <strong>Room:</strong> {selectedReservation.roomId?.roomNumber || "-"}
-          </p>
-
-          <p>
-            <strong>Total:</strong> ${Number(selectedReservation.priceSnapshot?.total || 0)}
-          </p>
-
-          <p>
-            <strong>Paid:</strong> ${getPaidAmount(selectedReservation._id)}
-          </p>
-
-          <p>
-            <strong>Balance:</strong> $
-            {Number(selectedReservation.priceSnapshot?.total || 0) -
-              getPaidAmount(selectedReservation._id)}
-          </p>
-
-          <form onSubmit={submitPayment}>
-            <input
-              type="number"
-              name="amount"
-              placeholder="Amount"
-              value={paymentForm.amount}
-              onChange={handlePaymentChange}
-              required
-            />
-
-            <select
-              name="method"
-              value={paymentForm.method}
-              onChange={handlePaymentChange}
+            <button
+              className="btn btn-secondary"
+              onClick={closePaymentForm}
             >
-              <option value="cash">Cash</option>
-              <option value="card">Card</option>
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="other">Other</option>
-            </select>
-
-            <input
-              name="reference"
-              placeholder="Reference / Transaction ID"
-              value={paymentForm.reference}
-              onChange={handlePaymentChange}
-            />
-
-            <input
-              name="note"
-              placeholder="Note"
-              value={paymentForm.note}
-              onChange={handlePaymentChange}
-            />
-
-            <button type="submit">Save Payment</button>
-            <button type="button" onClick={closePaymentForm} style={{ background: "#6b7280" }}>
-              Cancel
+              Close
             </button>
+          </div>
+
+          <form onSubmit={submitPayment} className="form-grid">
+            <div className="form-field">
+              <label>Amount</label>
+
+              <input
+                type="number"
+                name="amount"
+                value={paymentForm.amount}
+                onChange={handlePaymentChange}
+                required
+              />
+            </div>
+
+            <div className="form-field">
+              <label>Method</label>
+
+              <select
+                name="method"
+                value={paymentForm.method}
+                onChange={handlePaymentChange}
+              >
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>Reference</label>
+
+              <input
+                name="reference"
+                placeholder="Transaction ID / reference"
+                value={paymentForm.reference}
+                onChange={handlePaymentChange}
+              />
+            </div>
+
+            <div className="form-field">
+              <label>Note</label>
+
+              <input
+                name="note"
+                placeholder="Payment note"
+                value={paymentForm.note}
+                onChange={handlePaymentChange}
+              />
+            </div>
+
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary">
+                Save Payment
+              </button>
+            </div>
           </form>
         </div>
       ) : null}
 
-      <div className="card">
-        <h2>Reservation Balances</h2>
+      <div className="page-card">
+        <div className="page-header">
+          <div>
+            <h2 className="page-title">Reservation Balances</h2>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Booking No</th>
-              <th>Room</th>
-              <th>Guest</th>
-              <th>Status</th>
-              <th>Total</th>
-              <th>Paid</th>
-              <th>Balance</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+            <div className="page-subtitle">
+              See total, paid and remaining balance.
+            </div>
+          </div>
+        </div>
 
-          <tbody>
-            {reservations.map((reservation) => {
-              const total = Number(reservation.priceSnapshot?.total || 0);
-              const paid = getPaidAmount(reservation._id);
-              const balance = total - paid;
-
-              return (
-                <tr key={reservation._id}>
-                  <td>{reservation.bookingNo}</td>
-                  <td>{reservation.roomId?.roomNumber || "-"}</td>
-                  <td>{reservation.guest?.name || "-"}</td>
-                  <td>{reservation.status}</td>
-                  <td>${total}</td>
-                  <td>${paid}</td>
-                  <td>${balance}</td>
-                  <td>
-                    {balance > 0 && reservation.status !== "cancelled" ? (
-                      <button onClick={() => openPaymentForm(reservation)}>
-                        Pay
-                      </button>
-                    ) : null}
-
-                    <Link className="button-link" to={`/invoice/${reservation._id}`}>
-                      Invoice
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <ResponsiveTable
+          columns={reservationColumns}
+          data={reservations}
+          emptyMessage="No reservations found."
+        />
       </div>
 
-      <div className="card">
-        <h2>Recent Payments</h2>
+      <div className="page-card">
+        <div className="page-header">
+          <div>
+            <h2 className="page-title">Recent Payments</h2>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Receipt No</th>
-              <th>Booking</th>
-              <th>Room</th>
-              <th>Method</th>
-              <th>Amount</th>
-              <th>Date</th>
-            </tr>
-          </thead>
+            <div className="page-subtitle">
+              Latest recorded payments.
+            </div>
+          </div>
+        </div>
 
-          <tbody>
-            {payments.map((payment) => (
-              <tr key={payment._id}>
-                <td>{payment.receiptNo}</td>
-                <td>{payment.reservationId?.bookingNo || "-"}</td>
-                <td>{payment.reservationId?.roomId?.roomNumber || "-"}</td>
-                <td>{payment.method}</td>
-                <td>${payment.amount}</td>
-                <td>{formatDateTime(payment.createdAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ResponsiveTable
+          columns={paymentColumns}
+          data={payments}
+          emptyMessage="No payments found."
+        />
       </div>
     </div>
   );

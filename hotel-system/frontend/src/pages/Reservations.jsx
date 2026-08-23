@@ -1,74 +1,156 @@
 import { useEffect, useState } from "react";
+
 import api from "../api";
+
+import ResponsiveTable from "../components/ResponsiveTable.jsx";
+
+const formatMoney = (value) => {
+  return `$${Number(value || 0).toFixed(2)}`;
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleString();
+};
 
 export default function Reservations() {
   const [rooms, setRooms] = useState([]);
   const [reservations, setReservations] = useState([]);
+
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
-    roomId: "", guestName: "", guestPhone: "",
-    scheduledCheckIn: "", scheduledCheckOut: "",
-    adults: 1, children: 0, extraBeds: 0
+    roomId: "",
+    guestName: "",
+    guestPhone: "",
+    scheduledCheckIn: "",
+    scheduledCheckOut: "",
+    adults: 1,
+    children: 0,
+    extraBeds: 0
   });
 
-  // Voucher States
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState(null);
-  const [voucherMsg, setVoucherMsg] = useState("");
+  const [voucherMessage, setVoucherMessage] = useState("");
 
   const loadRooms = async () => {
-    const res = await api.get("/rooms?active=true");
-    setRooms(res.data);
+    try {
+      const response = await api.get("/rooms?active=true");
+
+      setRooms(response.data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const loadReservations = async () => {
-    const res = await api.get("/reservations");
-    setReservations(res.data);
+    try {
+      const response = await api.get("/reservations");
+
+      setReservations(response.data);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Failed to load reservations"
+      );
+    }
   };
 
-  useEffect(() => { loadRooms(); loadReservations(); }, []);
+  useEffect(() => {
+    loadRooms();
+    loadReservations();
+  }, []);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  };
 
-  // Calculate current subtotal for voucher validation
   const calculateSubtotal = () => {
-    const room = rooms.find(r => r._id === form.roomId);
-    if (!room || !form.scheduledCheckIn || !form.scheduledCheckOut) return 0;
-    
+    const room = rooms.find((item) => item._id === form.roomId);
+
+    if (!room || !form.scheduledCheckIn || !form.scheduledCheckOut) {
+      return 0;
+    }
+
     const checkIn = new Date(form.scheduledCheckIn);
     const checkOut = new Date(form.scheduledCheckOut);
-    const nights = Math.max(1, Math.ceil((checkOut - checkIn) / (24 * 60 * 60 * 1000)));
-    
+
+    const nights = Math.max(
+      1,
+      Math.ceil((checkOut - checkIn) / (24 * 60 * 60 * 1000))
+    );
+
     const roomCharge = nights * Number(room.basePrice || 0);
-    const extraBedCharge = Number(form.extraBeds || 0) * nights * Number(room.extraBedPrice || 0);
+
+    const extraBedCharge =
+      Number(form.extraBeds || 0) *
+      nights *
+      Number(room.extraBedPrice || 0);
+
     return roomCharge + extraBedCharge;
   };
 
   const validateVoucher = async () => {
-    if (!voucherCode) return;
-    const subtotal = calculateSubtotal();
-    if (subtotal <= 0) {
-      setVoucherMsg("Please select room and dates first.");
-      return;
-    }
-
     try {
-      const res = await api.post("/vouchers/validate", { code: voucherCode, subtotal });
-      setAppliedVoucher(res.data);
-      setVoucherMsg(`Applied: -$${res.data.discount}`);
+      setMessage("");
+      setError("");
+      setVoucherMessage("");
+
+      const subtotal = calculateSubtotal();
+
+      if (subtotal <= 0) {
+        setVoucherMessage("Select room and dates first.");
+        return;
+      }
+
+      const response = await api.post("/vouchers/validate", {
+        code: voucherCode,
+        subtotal
+      });
+
+      setAppliedVoucher(response.data);
+
+      setVoucherMessage(
+        `Applied: -${formatMoney(response.data.discount)}`
+      );
     } catch (err) {
       setAppliedVoucher(null);
-      setVoucherMsg(`${err.response?.data?.message || "Invalid code"}`);
+
+      setVoucherMessage(
+        err.response?.data?.message || "Invalid voucher code"
+      );
     }
   };
 
   const createReservation = async (e) => {
     e.preventDefault();
+
     try {
+      setMessage("");
+      setError("");
+
+      if (!form.roomId || !form.scheduledCheckIn || !form.scheduledCheckOut) {
+        setError("Please select room, check-in and check-out");
+        return;
+      }
+
       const payload = {
         roomId: form.roomId,
-        guest: { name: form.guestName, phone: form.guestPhone },
+        guest: {
+          name: form.guestName,
+          phone: form.guestPhone
+        },
         scheduledCheckIn: new Date(form.scheduledCheckIn).toISOString(),
         scheduledCheckOut: new Date(form.scheduledCheckOut).toISOString(),
         adults: Number(form.adults || 1),
@@ -78,115 +160,319 @@ export default function Reservations() {
       };
 
       await api.post("/reservations", payload);
-      setMessage("Reservation created successfully!");
-      
-      // Reset form
-      setForm({ roomId: "", guestName: "", guestPhone: "", scheduledCheckIn: "", scheduledCheckOut: "", adults: 1, children: 0, extraBeds: 0 });
+
+      setMessage("Reservation created successfully");
+
+      setForm({
+        roomId: "",
+        guestName: "",
+        guestPhone: "",
+        scheduledCheckIn: "",
+        scheduledCheckOut: "",
+        adults: 1,
+        children: 0,
+        extraBeds: 0
+      });
+
       setVoucherCode("");
       setAppliedVoucher(null);
-      setVoucherMsg("");
-      
+      setVoucherMessage("");
+
       loadReservations();
-    } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to create reservation");
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Failed to create reservation"
+      );
     }
   };
 
-  // 
-  const checkIn = async (id) => { await api.post(`/reservations/${id}/check-in`); loadReservations(); };
-  const checkOut = async (id) => { await api.post(`/reservations/${id}/check-out`); loadReservations(); };
-  const cancelReservation = async (id) => { await api.post(`/reservations/${id}/cancel`, {}); loadReservations(); };
+  const checkIn = async (id) => {
+    try {
+      await api.post(`/reservations/${id}/check-in`);
+
+      setMessage("Checked in successfully");
+
+      loadReservations();
+    } catch (err) {
+      setError(err.response?.data?.message || "Check-in failed");
+    }
+  };
+
+  const checkOut = async (id) => {
+    try {
+      await api.post(`/reservations/${id}/check-out`);
+
+      setMessage("Checked out successfully");
+
+      loadReservations();
+    } catch (err) {
+      setError(err.response?.data?.message || "Check-out failed");
+    }
+  };
+
+  const cancelReservation = async (id) => {
+    try {
+      await api.post(`/reservations/${id}/cancel`, {});
+
+      setMessage("Reservation cancelled");
+
+      loadReservations();
+    } catch (err) {
+      setError(err.response?.data?.message || "Cancel failed");
+    }
+  };
+
+  const columns = [
+    {
+      key: "bookingNo",
+      label: "Booking"
+    },
+    {
+      key: "room",
+      label: "Room",
+      render: (row) => row.roomId?.roomNumber || "-"
+    },
+    {
+      key: "guest",
+      label: "Guest",
+      render: (row) => row.guest?.name || "-"
+    },
+    {
+      key: "scheduledCheckIn",
+      label: "Check In",
+      render: (row) => formatDateTime(row.scheduledCheckIn)
+    },
+    {
+      key: "scheduledCheckOut",
+      label: "Check Out",
+      render: (row) => formatDateTime(row.scheduledCheckOut)
+    },
+    {
+      key: "voucher",
+      label: "Voucher",
+      render: (row) => row.voucherCode || "-"
+    },
+    {
+      key: "total",
+      label: "Total",
+      render: (row) => formatMoney(row.priceSnapshot?.total)
+    },
+    {
+      key: "status",
+      label: "Status"
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (row) => (
+        <div className="action-stack">
+          {row.status === "reserved" ? (
+            <>
+              <button
+                className="btn btn-primary"
+                onClick={() => checkIn(row._id)}
+              >
+                Check In
+              </button>
+
+              <button
+                className="btn btn-danger"
+                onClick={() => cancelReservation(row._id)}
+              >
+                Cancel
+              </button>
+            </>
+          ) : null}
+
+          {row.status === "checked_in" ? (
+            <button
+              className="btn btn-success"
+              onClick={() => checkOut(row._id)}
+            >
+              Check Out
+            </button>
+          ) : null}
+        </div>
+      )
+    }
+  ];
 
   return (
-    <div>
-      <div className="card">
-        <h2>Create Reservation</h2>
-        {message && <div className="success">{message}</div>}
-        
-        <form onSubmit={createReservation} style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "500px" }}>
-          <select name="roomId" value={form.roomId} onChange={handleChange} required>
-            <option value="">Select room</option>
-            {rooms.map((room) => (
-              <option key={room._id} value={room._id}>
-                {room.roomNumber} - {room.roomType} - ${room.basePrice}/night
-              </option>
-            ))}
-          </select>
+    <div className="page">
+      <div className="page-card">
+        <div className="page-header">
+          <div>
+            <h2 className="page-title">Create Reservation</h2>
 
-          <input name="guestName" placeholder="Guest Name" value={form.guestName} onChange={handleChange} required />
-          <input name="guestPhone" placeholder="Guest Phone" value={form.guestPhone} onChange={handleChange} />
-
-          <div style={{display: "flex", gap: "10px"}}>
-            <label>Check-In:<br/><input type="datetime-local" name="scheduledCheckIn" value={form.scheduledCheckIn} onChange={handleChange} required /></label>
-            <label>Check-Out:<br/><input type="datetime-local" name="scheduledCheckOut" value={form.scheduledCheckOut} onChange={handleChange} required /></label>
-          </div>
-
-          <div style={{display: "flex", gap: "10px"}}>
-            <input type="number" name="adults" placeholder="Adults" value={form.adults} onChange={handleChange} />
-            <input type="number" name="children" placeholder="Children" value={form.children} onChange={handleChange} />
-            <input type="number" name="extraBeds" placeholder="Extra Beds" value={form.extraBeds} onChange={handleChange} />
-          </div>
-
-          {/* Voucher Section */}
-          <div style={{ border: "1px solid #ddd", padding: "10px", borderRadius: "8px", marginTop: "10px" }}>
-            <label>Voucher Code:</label>
-            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-              <input 
-                value={voucherCode} 
-                onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setAppliedVoucher(null); setVoucherMsg(""); }} 
-                placeholder="e.g. WELCOME50" 
-                style={{flex: 1}}
-              />
-              <button type="button" onClick={validateVoucher} style={{background: "#16a34a"}}>Apply</button>
+            <div className="page-subtitle">
+              Book a room for a guest.
             </div>
-            {voucherMsg && <small style={{ color: voucherMsg.includes("❌") ? "red" : "green" }}>{voucherMsg}</small>}
+          </div>
+        </div>
+
+        {message ? <div className="alert alert-success">{message}</div> : null}
+        {error ? <div className="alert alert-error">{error}</div> : null}
+
+        <form onSubmit={createReservation} className="form-grid">
+          <div className="form-field">
+            <label>Room</label>
+
+            <select
+              name="roomId"
+              value={form.roomId}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select room</option>
+
+              {rooms.map((room) => (
+                <option key={room._id} value={room._id}>
+                  {room.roomNumber} - {room.roomType} - $
+                  {room.basePrice}/night
+                </option>
+              ))}
+            </select>
           </div>
 
-          <button type="submit" style={{marginTop: "20px", padding: "12px", fontSize: "16px"}}>Create Reservation</button>
+          <div className="form-field">
+            <label>Guest Name</label>
+
+            <input
+              name="guestName"
+              placeholder="Guest name"
+              value={form.guestName}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Guest Phone</label>
+
+            <input
+              name="guestPhone"
+              placeholder="Guest phone"
+              value={form.guestPhone}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Check In</label>
+
+            <input
+              type="datetime-local"
+              name="scheduledCheckIn"
+              value={form.scheduledCheckIn}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Check Out</label>
+
+            <input
+              type="datetime-local"
+              name="scheduledCheckOut"
+              value={form.scheduledCheckOut}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Adults</label>
+
+            <input
+              type="number"
+              name="adults"
+              value={form.adults}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Children</label>
+
+            <input
+              type="number"
+              name="children"
+              value={form.children}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Extra Beds</label>
+
+            <input
+              type="number"
+              name="extraBeds"
+              value={form.extraBeds}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-field field-full">
+            <label>Voucher Code</label>
+
+            <div className="action-stack">
+              <input
+                value={voucherCode}
+                onChange={(e) => {
+                  setVoucherCode(e.target.value.toUpperCase());
+                  setAppliedVoucher(null);
+                  setVoucherMessage("");
+                }}
+                placeholder="Enter voucher code"
+              />
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={validateVoucher}
+              >
+                Apply
+              </button>
+            </div>
+
+            {voucherMessage ? (
+              <div
+                className={
+                  voucherMessage.includes("Applied")
+                    ? "alert alert-success"
+                    : "alert alert-error"
+                }
+              >
+                {voucherMessage}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">
+              Create Reservation
+            </button>
+          </div>
         </form>
       </div>
 
-      <div className="card">
-        <h2>Reservations</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Booking No</th>
-              <th>Room</th>
-              <th>Guest</th>
-              <th>Dates</th>
-              <th>Voucher</th>
-              <th>Total</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reservations.map((r) => (
-              <tr key={r._id}>
-                <td>{r.bookingNo}</td>
-                <td>{r.roomId?.roomNumber}</td>
-                <td>{r.guest?.name}</td>
-                <td>
-                  {new Date(r.scheduledCheckIn).toLocaleDateString()} <br/>
-                  <small>to {new Date(r.scheduledCheckOut).toLocaleDateString()}</small>
-                </td>
-                <td>{r.voucherCode ? <strong>{r.voucherCode}</strong> : "-"}</td>
-                <td>${r.priceSnapshot?.total} <br/> <small style={{color:"green"}}>Disc: ${r.priceSnapshot?.voucherDiscount}</small></td>
-                <td>{r.status}</td>
-                <td>
-                  {r.status === "reserved" && (
-                    <>
-                      <button onClick={() => checkIn(r._id)}>Check In</button>
-                      <button onClick={() => cancelReservation(r._id)} style={{background:"red"}}>Cancel</button>
-                    </>
-                  )}
-                  {r.status === "checked_in" && <button onClick={() => checkOut(r._id)}>Check Out</button>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="page-card">
+        <div className="page-header">
+          <div>
+            <h2 className="page-title">Reservations</h2>
+
+            <div className="page-subtitle">
+              Manage bookings, check-in and check-out.
+            </div>
+          </div>
+        </div>
+
+        <ResponsiveTable
+          columns={columns}
+          data={reservations}
+          emptyMessage="No reservations found."
+        />
       </div>
     </div>
   );

@@ -1,109 +1,293 @@
 import { useEffect, useState } from "react";
+
 import api from "../api";
+
+import ResponsiveTable from "../components/ResponsiveTable.jsx";
+
+const formatDate = (value) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleDateString();
+};
 
 export default function Vouchers() {
   const [vouchers, setVouchers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     code: "",
     type: "fixed",
     value: "",
-    maxDiscount: 0,
+    maxDiscount: "",
+    usageLimit: "1",
     validFrom: "",
-    validTo: "",
-    usageLimit: 1
+    validTo: ""
   });
 
   const loadVouchers = async () => {
-    const res = await api.get("/vouchers");
-    setVouchers(res.data);
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await api.get("/vouchers");
+
+      setVouchers(response.data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load vouchers");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { loadVouchers(); }, []);
+  useEffect(() => {
+    loadVouchers();
+  }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
   };
 
   const createVoucher = async (e) => {
     e.preventDefault();
+
     try {
+      setMessage("");
+      setError("");
+
       const payload = {
-        ...form,
         code: form.code.toUpperCase(),
+        type: form.type,
         value: Number(form.value),
-        maxDiscount: Number(form.maxDiscount),
-        usageLimit: Number(form.usageLimit),
+        maxDiscount: Number(form.maxDiscount || 0),
+        usageLimit: Number(form.usageLimit || 1),
         validFrom: new Date(form.validFrom).toISOString(),
         validTo: new Date(form.validTo).toISOString()
       };
+
       await api.post("/vouchers", payload);
-      setMessage("Voucher created!");
-      setForm({ code: "", type: "fixed", value: "", maxDiscount: 0, validFrom: "", validTo: "", usageLimit: 1 });
+
+      setMessage("Voucher created successfully");
+
+      setForm({
+        code: "",
+        type: "fixed",
+        value: "",
+        maxDiscount: "",
+        usageLimit: "1",
+        validFrom: "",
+        validTo: ""
+      });
+
       loadVouchers();
     } catch (err) {
-      setMessage(err.response?.data?.message || "Failed to create voucher");
+      setError(err.response?.data?.message || "Failed to create voucher");
     }
   };
 
-  const deleteVoucher = async (id) => {
-    await api.delete(`/vouchers/${id}`);
-    loadVouchers();
+  const disableVoucher = async (id) => {
+    try {
+      await api.delete(`/vouchers/${id}`);
+
+      setMessage("Voucher disabled");
+
+      loadVouchers();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to disable voucher");
+    }
   };
 
-  return (
-    <div>
-      <div className="card">
-        <h2>Create Voucher</h2>
-        {message && <div className="success">{message}</div>}
-        <form onSubmit={createVoucher} style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-          <input name="code" placeholder="Code (e.g. SAVE20)" value={form.code} onChange={handleChange} required />
-          <select name="type" value={form.type} onChange={handleChange}>
-            <option value="fixed">Fixed Amount ($)</option>
-            <option value="percentage">Percentage (%)</option>
-          </select>
-          <input type="number" name="value" placeholder="Value" value={form.value} onChange={handleChange} required />
-          {form.type === "percentage" && (
-            <input type="number" name="maxDiscount" placeholder="Max Discount ($)" value={form.maxDiscount} onChange={handleChange} />
+  const columns = [
+    {
+      key: "code",
+      label: "Code",
+      render: (row) => <strong>{row.code}</strong>
+    },
+    {
+      key: "type",
+      label: "Type"
+    },
+    {
+      key: "value",
+      label: "Value",
+      render: (row) =>
+        row.type === "fixed" ? `$${row.value}` : `${row.value}%`
+    },
+    {
+      key: "usage",
+      label: "Usage",
+      render: (row) => `${row.usedCount} / ${row.usageLimit}`
+    },
+    {
+      key: "validTo",
+      label: "Valid To",
+      render: (row) => formatDate(row.validTo)
+    },
+    {
+      key: "active",
+      label: "Status",
+      render: (row) => (row.active ? "Active" : "Disabled")
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (row) => (
+        <div className="action-stack">
+          {row.active ? (
+            <button
+              className="btn btn-danger"
+              onClick={() => disableVoucher(row._id)}
+            >
+              Disable
+            </button>
+          ) : (
+            <span>-</span>
           )}
-          <input type="number" name="usageLimit" placeholder="Usage Limit" value={form.usageLimit} onChange={handleChange} required />
-          <input type="date" name="validFrom" value={form.validFrom} onChange={handleChange} required />
-          <input type="date" name="validTo" value={form.validTo} onChange={handleChange} required />
-          <button type="submit">Create</button>
+        </div>
+      )
+    }
+  ];
+
+  return (
+    <div className="page">
+      <div className="page-card">
+        <div className="page-header">
+          <div>
+            <h2 className="page-title">Create Voucher</h2>
+
+            <div className="page-subtitle">
+              Add discount codes for reservations.
+            </div>
+          </div>
+        </div>
+
+        {message ? <div className="alert alert-success">{message}</div> : null}
+        {error ? <div className="alert alert-error">{error}</div> : null}
+
+        <form onSubmit={createVoucher} className="form-grid">
+          <div className="form-field">
+            <label>Code</label>
+
+            <input
+              name="code"
+              placeholder="Example: WELCOME50"
+              value={form.code}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Type</label>
+
+            <select
+              name="type"
+              value={form.type}
+              onChange={handleChange}
+            >
+              <option value="fixed">Fixed Amount</option>
+              <option value="percentage">Percentage</option>
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label>Value</label>
+
+            <input
+              type="number"
+              name="value"
+              placeholder="Example: 50 or 20"
+              value={form.value}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Max Discount</label>
+
+            <input
+              type="number"
+              name="maxDiscount"
+              placeholder="For percentage vouchers"
+              value={form.maxDiscount}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Usage Limit</label>
+
+            <input
+              type="number"
+              name="usageLimit"
+              value={form.usageLimit}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Valid From</label>
+
+            <input
+              type="date"
+              name="validFrom"
+              value={form.validFrom}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Valid To</label>
+
+            <input
+              type="date"
+              name="validTo"
+              value={form.validTo}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">
+              Create Voucher
+            </button>
+          </div>
         </form>
       </div>
 
-      <div className="card">
-        <h2>Existing Vouchers</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Type</th>
-              <th>Value</th>
-              <th>Usage</th>
-              <th>Valid To</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {vouchers.map((v) => (
-              <tr key={v._id}>
-                <td><strong>{v.code}</strong></td>
-                <td>{v.type}</td>
-                <td>{v.type === 'fixed' ? `$${v.value}` : `${v.value}%`}</td>
-                <td>{v.usedCount} / {v.usageLimit}</td>
-                <td>{new Date(v.validTo).toLocaleDateString()}</td>
-                <td>{v.active ? "Active" : "Disabled"}</td>
-                <td>
-                  {v.active && <button onClick={() => deleteVoucher(v._id)} style={{background:'red'}}>Disable</button>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="page-card">
+        <div className="page-header">
+          <div>
+            <h2 className="page-title">Vouchers</h2>
+
+            <div className="page-subtitle">
+              Manage existing voucher codes.
+            </div>
+          </div>
+        </div>
+
+        {loading ? <div>Loading vouchers...</div> : null}
+
+        {!loading ? (
+          <ResponsiveTable
+            columns={columns}
+            data={vouchers}
+            emptyMessage="No vouchers found."
+          />
+        ) : null}
       </div>
     </div>
   );

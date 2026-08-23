@@ -93,7 +93,7 @@ export default function AppLayout() {
   return (
     <div className="app-shell">
       <aside
-        className={`sidebar ${sidebarOpen ? "open" : ""}`}
+        className={`sidebar ${sidebarOpen ? "open" : ""}`} 
       >
         <div className="sidebar-brand">
           <span></span>

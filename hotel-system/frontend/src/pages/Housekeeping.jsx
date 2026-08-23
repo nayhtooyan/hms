@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 
 import api from "../api";
 
+import ResponsiveTable from "../components/ResponsiveTable.jsx";
+
 const formatDateTime = (value) => {
   if (!value) return "-";
 
@@ -37,7 +39,7 @@ export default function Housekeeping() {
 
       setTasks(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to load tasks");
+      setError(err.response?.data?.message || "Failed to load tasks");
     }
   };
 
@@ -97,7 +99,7 @@ export default function Housekeeping() {
 
       await api.post("/housekeeping/tasks", payload);
 
-      setMessage("Task created");
+      setMessage("Task created successfully");
 
       setForm({
         roomId: "",
@@ -109,7 +111,7 @@ export default function Housekeeping() {
 
       loadTasks();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to create task");
+      setError(err.response?.data?.message || "Failed to create task");
     }
   };
 
@@ -119,7 +121,7 @@ export default function Housekeeping() {
 
       loadTasks();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to start task");
+      setError(err.response?.data?.message || "Failed to start task");
     }
   };
 
@@ -129,7 +131,7 @@ export default function Housekeeping() {
 
       loadTasks();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to complete task");
+      setError(err.response?.data?.message || "Failed to complete task");
     }
   };
 
@@ -139,149 +141,206 @@ export default function Housekeeping() {
 
       loadTasks();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to cancel task");
+      setError(err.response?.data?.message || "Failed to cancel task");
     }
   };
 
+  const columns = [
+    {
+      key: "room",
+      label: "Room",
+      render: (row) => row.roomId?.roomNumber || "-"
+    },
+    {
+      key: "type",
+      label: "Type"
+    },
+    {
+      key: "priority",
+      label: "Priority"
+    },
+    {
+      key: "status",
+      label: "Status"
+    },
+    {
+      key: "assignedTo",
+      label: "Assigned To",
+      render: (row) => row.assignedTo?.name || "Unassigned"
+    },
+    {
+      key: "createdAt",
+      label: "Created",
+      render: (row) => formatDateTime(row.createdAt)
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (row) => (
+        <div className="action-stack">
+          {row.status === "pending" ? (
+            <>
+              <button
+                className="btn btn-primary"
+                onClick={() => startTask(row._id)}
+              >
+                Start
+              </button>
+
+              <button
+                className="btn btn-danger"
+                onClick={() => cancelTask(row._id)}
+              >
+                Cancel
+              </button>
+            </>
+          ) : null}
+
+          {row.status === "in_progress" ? (
+            <>
+              <button
+                className="btn btn-success"
+                onClick={() => completeTask(row._id)}
+              >
+                Complete
+              </button>
+
+              <button
+                className="btn btn-danger"
+                onClick={() => cancelTask(row._id)}
+              >
+                Cancel
+              </button>
+            </>
+          ) : null}
+        </div>
+      )
+    }
+  ];
+
   return (
-    <div>
-      <div className="card">
-        <h2>Create Housekeeping Task</h2>
+    <div className="page">
+      <div className="page-card">
+        <div className="page-header">
+          <div>
+            <h2 className="page-title">Create Housekeeping Task</h2>
 
-        {message ? <div className="success">{message}</div> : null}
-        {error ? <div className="error">{error}</div> : null}
+            <div className="page-subtitle">
+              Assign cleaning or maintenance work.
+            </div>
+          </div>
+        </div>
 
-        <form onSubmit={createTask}>
-          <select
-            name="roomId"
-            value={form.roomId}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select room</option>
+        {message ? <div className="alert alert-success">{message}</div> : null}
+        {error ? <div className="alert alert-error">{error}</div> : null}
 
-            {rooms.map((room) => (
-              <option key={room._id} value={room._id}>
-                {room.roomNumber} - {room.roomType} - {room.status}
-              </option>
-            ))}
-          </select>
+        <form onSubmit={createTask} className="form-grid">
+          <div className="form-field">
+            <label>Room</label>
 
-          <select
-            name="type"
-            value={form.type}
-            onChange={handleChange}
-          >
-            <option value="cleaning">Cleaning</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="inspection">Inspection</option>
-          </select>
-
-          <select
-            name="priority"
-            value={form.priority}
-            onChange={handleChange}
-          >
-            <option value="low">Low</option>
-            <option value="normal">Normal</option>
-            <option value="high">High</option>
-            <option value="urgent">Urgent</option>
-          </select>
-
-          {users.length > 0 ? (
             <select
-              name="assignedTo"
-              value={form.assignedTo}
+              name="roomId"
+              value={form.roomId}
               onChange={handleChange}
+              required
             >
-              <option value="">Unassigned</option>
+              <option value="">Select room</option>
 
-              {users.map((user) => (
-                <option key={user._id} value={user._id}>
-                  {user.name} - {user.role}
+              {rooms.map((room) => (
+                <option key={room._id} value={room._id}>
+                  {room.roomNumber} - {room.roomType} - {room.status}
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="form-field">
+            <label>Type</label>
+
+            <select
+              name="type"
+              value={form.type}
+              onChange={handleChange}
+            >
+              <option value="cleaning">Cleaning</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="inspection">Inspection</option>
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label>Priority</label>
+
+            <select
+              name="priority"
+              value={form.priority}
+              onChange={handleChange}
+            >
+              <option value="low">Low</option>
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+
+          {users.length > 0 ? (
+            <div className="form-field">
+              <label>Assigned To</label>
+
+              <select
+                name="assignedTo"
+                value={form.assignedTo}
+                onChange={handleChange}
+              >
+                <option value="">Unassigned</option>
+
+                {users.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.name} - {user.role}
+                  </option>
+                ))}
+              </select>
+            </div>
           ) : null}
 
-          <input
-            name="notes"
-            placeholder="Notes"
-            value={form.notes}
-            onChange={handleChange}
-          />
+          <div className="form-field field-full">
+            <label>Notes</label>
 
-          <button type="submit">Create Task</button>
+            <input
+              name="notes"
+              placeholder="Task notes"
+              value={form.notes}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">
+              Create Task
+            </button>
+          </div>
         </form>
       </div>
 
-      <div className="card">
-        <h2>Housekeeping Tasks</h2>
+      <div className="page-card">
+        <div className="page-header">
+          <div>
+            <h2 className="page-title">Housekeeping Tasks</h2>
 
-        {loading ? <div>Loading...</div> : null}
+            <div className="page-subtitle">
+              Start, complete or cancel tasks.
+            </div>
+          </div>
+        </div>
 
-        {!loading && tasks.length === 0 ? (
-          <div>No housekeeping tasks found.</div>
-        ) : null}
+        {loading ? <div>Loading tasks...</div> : null}
 
-        {!loading && tasks.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Room</th>
-                <th>Type</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Assigned To</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {tasks.map((task) => (
-                <tr key={task._id}>
-                  <td>{task.roomId?.roomNumber || "-"}</td>
-                  <td>{task.type}</td>
-                  <td>{task.priority}</td>
-                  <td>{task.status}</td>
-                  <td>{task.assignedTo?.name || "Unassigned"}</td>
-                  <td>{formatDateTime(task.createdAt)}</td>
-                  <td>
-                    {task.status === "pending" ? (
-                      <>
-                        <button onClick={() => startTask(task._id)}>
-                          Start
-                        </button>
-
-                        <button
-                          onClick={() => cancelTask(task._id)}
-                          style={{ background: "red" }}
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : null}
-
-                    {task.status === "in_progress" ? (
-                      <>
-                        <button onClick={() => completeTask(task._id)}>
-                          Complete
-                        </button>
-
-                        <button
-                          onClick={() => cancelTask(task._id)}
-                          style={{ background: "red" }}
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {!loading ? (
+          <ResponsiveTable
+            columns={columns}
+            data={tasks}
+            emptyMessage="No housekeeping tasks found."
+          />
         ) : null}
       </div>
     </div>
