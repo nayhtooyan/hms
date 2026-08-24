@@ -18,6 +18,7 @@ import Payments from "./pages/Payments.jsx";
 import Invoice from "./pages/Invoice.jsx";
 import RoomBoard from "./pages/RoomBoard.jsx";
 import Housekeeping from "./pages/Housekeeping.jsx";
+import Users from "./pages/Users.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -56,6 +57,7 @@ export default function App() {
             <Route path="payments" element={<Payments />} />
             <Route path="invoice/:reservationId" element={<Invoice />} />
             <Route path="housekeeping" element={<Housekeeping />} />
+            <Route path="users" element={<Users />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

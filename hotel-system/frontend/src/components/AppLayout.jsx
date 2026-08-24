@@ -52,6 +52,12 @@ const navItems = [
     label: "Housekeeping",
     icon: "",
     roles: ["admin", "manager", "reception", "cleaner", "maintenance"]
+  },
+  {
+  to: "/users",
+  label: "Users",
+  icon: "",
+  roles: ["admin"]
   }
 ];
 
