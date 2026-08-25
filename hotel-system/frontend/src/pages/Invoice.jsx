@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 
 import api from "../api";
+import { useSettings } from "../SettingsContext";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -33,6 +34,8 @@ export default function Invoice() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const { formatMoney } = useSettings();
 
   useEffect(() => {
     const loadInvoice = async () => {

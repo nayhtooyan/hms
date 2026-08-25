@@ -6,63 +6,72 @@ import {
 } from "react-router-dom";
 
 import { useAuth } from "../AuthContext";
+import { useLanguage } from "../LanguageContext";
 
 import "./AppLayout.css";
 
 const navItems = [
   {
     to: "/",
-    label: "Dashboard",
+    labelKey: "dashboard",
     icon: "",
     end: true,
     roles: ["admin", "manager", "reception", "cleaner", "maintenance"]
   },
   {
     to: "/room-board",
-    label: "Room Board",
+    labelKey: "roomBoard",
     icon: "",
     roles: ["admin", "manager", "reception", "cleaner", "maintenance"]
   },
   {
     to: "/rooms",
-    label: "Rooms",
+    labelKey: "rooms",
     icon: "",
     roles: ["admin", "manager", "reception"]
   },
   {
     to: "/reservations",
-    label: "Reservations",
+    labelKey: "reservations",
     icon: "",
     roles: ["admin", "manager", "reception"]
   },
   {
     to: "/vouchers",
-    label: "Vouchers",
+    labelKey: "vouchers",
     icon: "",
     roles: ["admin", "manager", "reception"]
   },
   {
     to: "/payments",
-    label: "Payments",
+    labelKey: "payments",
     icon: "",
     roles: ["admin", "manager", "reception"]
   },
   {
+    to: "/users",
+    labelKey: "users",
+    icon: "",
+    roles: ["admin"]
+  },
+  {
     to: "/housekeeping",
-    label: "Housekeeping",
+    labelKey: "housekeeping",
     icon: "",
     roles: ["admin", "manager", "reception", "cleaner", "maintenance"]
   },
   {
-  to: "/users",
-  label: "Users",
-  icon: "",
-  roles: ["admin"]
+    to: "/settings",
+    labelKey: "settings",
+    icon: "",
+    roles: ["admin"]
   }
 ];
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
+
+  const { t, language, changeLanguage } = useLanguage();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -82,28 +91,30 @@ export default function AppLayout() {
 
   const getPageTitle = () => {
     if (location.pathname === "/") {
-      return "Dashboard";
+      return t("dashboard");
     }
 
     if (location.pathname.startsWith("/invoice")) {
-      return "Invoice";
+      return t("invoice");
     }
 
     const currentNav = navItems.find(
       (item) => item.to === location.pathname
     );
 
-    return currentNav?.label || "Hotel Management";
+    return currentNav
+      ? t(currentNav.labelKey)
+      : t("hotelManagement");
   };
 
   return (
     <div className="app-shell">
       <aside
-        className={`sidebar ${sidebarOpen ? "open" : ""}`} 
+        className={`sidebar ${sidebarOpen ? "open" : ""}`}
       >
         <div className="sidebar-brand">
           <span></span>
-          <span>Hotel PMS</span>
+          <span>{t("hotelManagement")}</span>
         </div>
 
         <nav className="sidebar-nav">
@@ -118,7 +129,7 @@ export default function AppLayout() {
               }
             >
               <span className="sidebar-icon">{item.icon}</span>
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </NavLink>
           ))}
         </nav>
@@ -136,7 +147,7 @@ export default function AppLayout() {
               logout();
             }}
           >
-            Logout
+            {t("logout")}
           </button>
         </div>
       </aside>
@@ -161,6 +172,30 @@ export default function AppLayout() {
           <div className="topbar-title">{getPageTitle()}</div>
 
           <div className="topbar-right">
+            <div className="action-stack">
+              <button
+                className={
+                  language === "en"
+                    ? "btn btn-primary"
+                    : "btn btn-secondary"
+                }
+                onClick={() => changeLanguage("en")}
+              >
+                EN
+              </button>
+
+              <button
+                className={
+                  language === "my"
+                    ? "btn btn-primary"
+                    : "btn btn-secondary"
+                }
+                onClick={() => changeLanguage("my")}
+              >
+                MM
+              </button>
+            </div>
+
             <div className="topbar-user">
               <div className="topbar-user-name">
                 {user?.name || "User"}
@@ -172,7 +207,7 @@ export default function AppLayout() {
             </div>
 
             <button className="topbar-logout" onClick={logout}>
-              Logout
+              {t("logout")}
             </button>
           </div>
         </header>

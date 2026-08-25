@@ -3,10 +3,8 @@ import { useEffect, useState } from "react";
 import api from "../api";
 
 import ResponsiveTable from "../components/ResponsiveTable.jsx";
+import { useSettings } from "../SettingsContext";
 
-const formatMoney = (value) => {
-  return `$${Number(value || 0).toFixed(2)}`;
-};
 
 const formatDateTime = (value) => {
   if (!value) return "-";
@@ -26,6 +24,8 @@ export default function Reservations() {
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  const { formatMoney } = useSettings();
 
   const [form, setForm] = useState({
     roomId: "",

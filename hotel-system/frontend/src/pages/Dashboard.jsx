@@ -4,10 +4,8 @@ import { Link } from "react-router-dom";
 import api from "../api";
 
 import "./dashboard.css";
+import { useSettings } from "../SettingsContext";
 
-const formatMoney = (value) => {
-  return `$${Number(value || 0).toFixed(2)}`;
-};
 
 const formatDateTime = (value) => {
   if (!value) return "-";
@@ -125,6 +123,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+
+  const { formatMoney } = useSettings();
 
   const loadDashboard = async () => {
     try {
