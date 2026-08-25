@@ -10,7 +10,8 @@ const rolePermissions = {
     "vouchers.*",
     "payments.*",
     "housekeeping.*",
-    "users.view"
+    "users.view",
+    "reports.view"
   ],
 
   reception: [
@@ -24,7 +25,8 @@ const rolePermissions = {
     "vouchers.validate",
     "payments.view",
     "payments.create",
-    "housekeeping.view"
+    "housekeeping.view",
+    "reports.view"
   ],
 
   cleaner: [

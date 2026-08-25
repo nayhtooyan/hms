@@ -23,6 +23,7 @@ import RoomBoard from "./pages/RoomBoard.jsx";
 import Housekeeping from "./pages/Housekeeping.jsx";
 import Users from "./pages/Users.jsx";
 import Settings from "./pages/Settings.jsx";
+import Reports from "./pages/Reports.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -65,6 +66,7 @@ export default function App() {
                 <Route path="housekeeping" element={<Housekeeping />} />
                 <Route path="users" element={<Users />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="reports" element={<Reports />} />
 
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>

@@ -62,6 +62,12 @@ const navItems = [
     roles: ["admin"]
   },
   {
+  to: "/reports",
+  labelKey: "reports",
+  icon: "",
+  roles: ["admin", "manager" , "reception"]
+  },
+  {
     to: "/settings",
     labelKey: "settings",
     icon: "",

@@ -19,7 +19,8 @@ const translations = {
     invoice: "Invoice",
     hotelManagement: "Hotel Management",
     refresh: "Refresh",
-    loading: "Loading"
+    loading: "Loading",
+    reports: "Reports",
   },
 
   my: {
@@ -36,7 +37,8 @@ const translations = {
     invoice: "ဘောင်ချာ",
     hotelManagement: "ဟိုတယ်စီမံခန့်ခွဲမှု",
     refresh: "အသစ်ပြန်လုပ်ရန်",
-    loading: "ဖတ်နေသည်"
+    loading: "ဖတ်နေသည်",
+    reports: "အစီရင်ခံစာများ",
   }
 };
 
