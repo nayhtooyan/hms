@@ -9,6 +9,7 @@ import { useAuth } from "../AuthContext";
 import { useLanguage } from "../LanguageContext";
 
 import "./AppLayout.css";
+import { useSettings } from "../SettingsContext";
 
 const navItems = [
   {
@@ -49,16 +50,16 @@ const navItems = [
     roles: ["admin", "manager", "reception"]
   },
   {
-    to: "/users",
-    labelKey: "users",
-    icon: "",
-    roles: ["admin"]
-  },
-  {
     to: "/housekeeping",
     labelKey: "housekeeping",
     icon: "",
     roles: ["admin", "manager", "reception", "cleaner", "maintenance"]
+  },
+  {
+    to: "/users",
+    labelKey: "users",
+    icon: "",
+    roles: ["admin"]
   },
   {
     to: "/settings",
@@ -73,6 +74,8 @@ export default function AppLayout() {
 
   const { t, language, changeLanguage } = useLanguage();
 
+  const { settings } = useSettings();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const location = useLocation();
@@ -80,6 +83,10 @@ export default function AppLayout() {
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+  document.title = settings?.hotelName || "Hotel Management";
+  }, [settings]);
 
   const role = user?.role || "reception";
 
@@ -114,7 +121,7 @@ export default function AppLayout() {
       >
         <div className="sidebar-brand">
           <span></span>
-          <span>{t("hotelManagement")}</span>
+          <span>{settings?.hotelName || t("hotelManagement")}</span>
         </div>
 
         <nav className="sidebar-nav">

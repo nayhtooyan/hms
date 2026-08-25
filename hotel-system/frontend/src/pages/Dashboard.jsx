@@ -7,18 +7,6 @@ import "./dashboard.css";
 import { useSettings } from "../SettingsContext";
 
 
-const formatDateTime = (value) => {
-  if (!value) return "-";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleString();
-};
-
 function StatusBadge({ status }) {
   const value = String(status || "").toLowerCase();
 
@@ -124,7 +112,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const { formatMoney } = useSettings();
+  const { formatMoney, formatDateTime } = useSettings();
 
   const loadDashboard = async () => {
     try {

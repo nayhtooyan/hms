@@ -2,40 +2,22 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 
 import api from "../api";
+
 import { useSettings } from "../SettingsContext";
-
-const formatDate = (value) => {
-  if (!value) return "-";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleDateString();
-};
-
-const formatDateTime = (value) => {
-  if (!value) return "-";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleString();
-};
 
 export default function Invoice() {
   const { reservationId } = useParams();
 
+  const {
+    settings,
+    formatMoney,
+    formatDate,
+    formatDateTime
+  } = useSettings();
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const { formatMoney } = useSettings();
 
   useEffect(() => {
     const loadInvoice = async () => {
@@ -43,11 +25,17 @@ export default function Invoice() {
         setLoading(true);
         setError("");
 
-        const response = await api.get(`/payments/invoice/${reservationId}`);
+        const response = await api.get(
+          `/payments/invoice/${reservationId}`
+        );
 
         setData(response.data);
       } catch (err) {
-        setError(err.response?.data?.message || err.message || "Failed to load invoice");
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to load invoice"
+        );
       } finally {
         setLoading(false);
       }
@@ -68,7 +56,13 @@ export default function Invoice() {
     return <div className="card">Invoice not found</div>;
   }
 
-  const { reservation, payments, total, paid, balance } = data;
+  const {
+    reservation,
+    payments,
+    total,
+    paid,
+    balance
+  } = data;
 
   const priceSnapshot = reservation.priceSnapshot || {};
 
@@ -79,13 +73,26 @@ export default function Invoice() {
           Back to Payments
         </Link>
 
-        <button onClick={() => window.print()}>Print Invoice</button>
+        <button onClick={() => window.print()}>
+          Print Invoice
+        </button>
       </div>
 
-      <h1>Hotel Invoice</h1>
+      <h1>{settings?.hotelName || "Hotel Invoice"}</h1>
+
+      {settings?.address ? <p>{settings.address}</p> : null}
+
+      {settings?.contactPhone ? (
+        <p>Phone: {settings.contactPhone}</p>
+      ) : null}
+
+      {settings?.contactEmail ? (
+        <p>Email: {settings.contactEmail}</p>
+      ) : null}
 
       <p>
-        <strong>Invoice Date:</strong> {formatDateTime(new Date())}
+        <strong>Invoice Date:</strong>{" "}
+        {formatDateTime(new Date())}
       </p>
 
       <p>
@@ -113,27 +120,33 @@ export default function Invoice() {
       <h3>Room Details</h3>
 
       <p>
-        <strong>Room:</strong> {reservation.roomId?.roomNumber || "-"}
+        <strong>Room:</strong>{" "}
+        {reservation.roomId?.roomNumber || "-"}
       </p>
 
       <p>
-        <strong>Room Type:</strong> {reservation.roomId?.roomType || "-"}
+        <strong>Room Type:</strong>{" "}
+        {reservation.roomId?.roomType || "-"}
       </p>
 
       <p>
-        <strong>Check-In:</strong> {formatDate(reservation.scheduledCheckIn)}
+        <strong>Check-In:</strong>{" "}
+        {formatDate(reservation.scheduledCheckIn)}
       </p>
 
       <p>
-        <strong>Check-Out:</strong> {formatDate(reservation.scheduledCheckOut)}
+        <strong>Check-Out:</strong>{" "}
+        {formatDate(reservation.scheduledCheckOut)}
       </p>
 
       <p>
-        <strong>Actual Check-In:</strong> {formatDateTime(reservation.actualCheckIn)}
+        <strong>Actual Check-In:</strong>{" "}
+        {formatDateTime(reservation.actualCheckIn)}
       </p>
 
       <p>
-        <strong>Actual Check-Out:</strong> {formatDateTime(reservation.actualCheckOut)}
+        <strong>Actual Check-Out:</strong>{" "}
+        {formatDateTime(reservation.actualCheckOut)}
       </p>
 
       <hr />
@@ -151,22 +164,30 @@ export default function Invoice() {
         <tbody>
           <tr>
             <td>Room Charge</td>
-            <td>${Number(priceSnapshot.roomCharge || 0)}</td>
+            <td>
+              {formatMoney(priceSnapshot.roomCharge || 0)}
+            </td>
           </tr>
 
           <tr>
             <td>Extra Bed Charge</td>
-            <td>${Number(priceSnapshot.extraBedCharge || 0)}</td>
+            <td>
+              {formatMoney(priceSnapshot.extraBedCharge || 0)}
+            </td>
           </tr>
 
           <tr>
             <td>Overtime Charge</td>
-            <td>${Number(priceSnapshot.overtimeCharge || 0)}</td>
+            <td>
+              {formatMoney(priceSnapshot.overtimeCharge || 0)}
+            </td>
           </tr>
 
           <tr>
             <td>Voucher Discount</td>
-            <td>- ${Number(priceSnapshot.voucherDiscount || 0)}</td>
+            <td>
+              - {formatMoney(priceSnapshot.voucherDiscount || 0)}
+            </td>
           </tr>
 
           <tr>
@@ -174,7 +195,7 @@ export default function Invoice() {
               <strong>Total</strong>
             </td>
             <td>
-              <strong>${total}</strong>
+              <strong>{formatMoney(total)}</strong>
             </td>
           </tr>
         </tbody>
@@ -203,7 +224,7 @@ export default function Invoice() {
                 <td>{payment.receiptNo}</td>
                 <td>{formatDateTime(payment.createdAt)}</td>
                 <td>{payment.method}</td>
-                <td>${payment.amount}</td>
+                <td>{formatMoney(payment.amount)}</td>
               </tr>
             ))}
           </tbody>
@@ -215,15 +236,15 @@ export default function Invoice() {
       <h3>Summary</h3>
 
       <p>
-        <strong>Total:</strong> ${total}
+        <strong>Total:</strong> {formatMoney(total)}
       </p>
 
       <p>
-        <strong>Paid:</strong> ${paid}
+        <strong>Paid:</strong> {formatMoney(paid)}
       </p>
 
       <p>
-        <strong>Balance:</strong> ${balance}
+        <strong>Balance:</strong> {formatMoney(balance)}
       </p>
 
       {balance === 0 ? (
@@ -231,6 +252,12 @@ export default function Invoice() {
       ) : (
         <p className="error">BALANCE DUE</p>
       )}
+
+      {settings?.invoiceFooter ? (
+        <p style={{ textAlign: "center", marginTop: "20px" }}>
+          {settings.invoiceFooter}
+        </p>
+      ) : null}
     </div>
   );
 }

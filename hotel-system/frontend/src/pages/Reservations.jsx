@@ -6,18 +6,6 @@ import ResponsiveTable from "../components/ResponsiveTable.jsx";
 import { useSettings } from "../SettingsContext";
 
 
-const formatDateTime = (value) => {
-  if (!value) return "-";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleString();
-};
-
 export default function Reservations() {
   const [rooms, setRooms] = useState([]);
   const [reservations, setReservations] = useState([]);
@@ -25,7 +13,7 @@ export default function Reservations() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const { formatMoney } = useSettings();
+  const { formatMoney, formatDateTime } = useSettings();
 
   const [form, setForm] = useState({
     roomId: "",
@@ -327,8 +315,8 @@ export default function Reservations() {
 
               {rooms.map((room) => (
                 <option key={room._id} value={room._id}>
-                  {room.roomNumber} - {room.roomType} - $
-                  {room.basePrice}/night
+                  {room.roomNumber} - {room.roomType} -{" "}
+                  {formatMoney(room.basePrice)}/night
                 </option>
               ))}
             </select>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import api from "../api";
+import { useSettings } from "../SettingsContext";
 
 export default function RoomBoard() {
   const [board, setBoard] = useState({
@@ -12,6 +13,7 @@ export default function RoomBoard() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const { formatMoney } = useSettings();
 
   const loadBoard = async () => {
     try {
@@ -109,7 +111,7 @@ export default function RoomBoard() {
               <h3>{room.roomNumber}</h3>
 
               <div>{room.roomType}</div>
-              <div>${room.basePrice}</div>
+              <div>{formatMoney(room.basePrice)}</div>
               <div className="room-status-label">{room.status}</div>
               <div>Tasks: {getActiveTaskCount(room._id)}</div>
             </div>

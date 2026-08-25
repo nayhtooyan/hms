@@ -379,7 +379,7 @@
   }
 }
 
-/* Make global app header more responsive */
+
 @media (max-width: 768px) {
   header {
     flex-direction: column;

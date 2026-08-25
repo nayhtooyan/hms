@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import api from "../api";
 
 import ResponsiveTable from "../components/ResponsiveTable.jsx";
+import { useSettings } from "../SettingsContext";
 
 export default function Rooms() {
   const [rooms, setRooms] = useState([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const { formatMoney } = useSettings();
 
   const [form, setForm] = useState({
     roomNumber: "",
@@ -109,7 +111,7 @@ export default function Rooms() {
     {
       key: "basePrice",
       label: "Price",
-      render: (room) => `$${Number(room.basePrice || 0)}`
+      render: (room) => formatMoney(room.basePrice)
     },
     {
       key: "active",

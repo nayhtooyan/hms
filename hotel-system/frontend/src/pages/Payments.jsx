@@ -7,18 +7,6 @@ import ResponsiveTable from "../components/ResponsiveTable.jsx";
 import { useSettings } from "../SettingsContext";
 
 
-const formatDateTime = (value) => {
-  if (!value) return "-";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleString();
-};
-
 export default function Payments() {
   const [reservations, setReservations] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -27,7 +15,7 @@ export default function Payments() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const { formatMoney } = useSettings();
+  const { formatMoney, formatDateTime } = useSettings();
 
   const [selectedReservation, setSelectedReservation] = useState(null);
 

@@ -3,24 +3,15 @@ import { useEffect, useState } from "react";
 import api from "../api";
 
 import ResponsiveTable from "../components/ResponsiveTable.jsx";
+import { useSettings } from "../SettingsContext";
 
-const formatDate = (value) => {
-  if (!value) return "-";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleDateString();
-};
 
 export default function Vouchers() {
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const { formatMoney, formatDate } = useSettings();
 
   const [form, setForm] = useState({
     code: "",
@@ -121,7 +112,9 @@ export default function Vouchers() {
       key: "value",
       label: "Value",
       render: (row) =>
-        row.type === "fixed" ? `$${row.value}` : `${row.value}%`
+        row.type === "fixed"
+          ? formatMoney(row.value)
+            : `${row.value}%`
     },
     {
       key: "usage",
