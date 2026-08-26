@@ -11,6 +11,7 @@ const userRoutes = require("./routes/user.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const settingRoutes = require("./routes/setting.routes");
 const reportsRoutes = require("./routes/reports.routes");
+const backupRoutes = require("./routes/backup.routes");
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/housekeeping", housekeepingRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/settings", settingRoutes);
 app.use("/api/reports", reportsRoutes);
+app.use("/api/backups", backupRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

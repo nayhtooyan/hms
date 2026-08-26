@@ -24,6 +24,7 @@ import Housekeeping from "./pages/Housekeeping.jsx";
 import Users from "./pages/Users.jsx";
 import Settings from "./pages/Settings.jsx";
 import Reports from "./pages/Reports.jsx";
+import Backups from "./pages/Backups.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -67,6 +68,7 @@ export default function App() {
                 <Route path="users" element={<Users />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="reports" element={<Reports />} />
+                <Route path="backups" element={<Backups />} />
 
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>

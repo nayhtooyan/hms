@@ -1,7 +1,8 @@
 const router = require("express").Router();
 
 const {
-  getReportsOverview
+  getReportsOverview,
+  exportReport
 } = require("../controllers/reports.controller");
 
 const {
@@ -15,6 +16,12 @@ router.get(
   "/overview",
   requirePermission("reports.view"),
   getReportsOverview
+);
+
+router.get(
+  "/export/:type",
+  requirePermission("reports.view"),
+  exportReport
 );
 
 module.exports = router;

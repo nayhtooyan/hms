@@ -68,6 +68,12 @@ const navItems = [
   roles: ["admin", "manager" , "reception"]
   },
   {
+  to: "/backups",
+  labelKey: "backups",
+  icon: "",
+  roles: ["admin"]
+  },
+  {
     to: "/settings",
     labelKey: "settings",
     icon: "",

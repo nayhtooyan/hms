@@ -14,6 +14,20 @@ const toInputDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+function ExportButton({ type, exporting, onExport }) {
+  const isExporting = exporting === type;
+
+  return (
+    <button
+      className="btn btn-secondary"
+      onClick={() => onExport(type)}
+      disabled={isExporting}
+    >
+      {isExporting ? "Exporting..." : "Export CSV"}
+    </button>
+  );
+}
+
 function ReportStat({ label, value }) {
   return (
     <div className="page-card" style={{ textAlign: "center" }}>
@@ -61,6 +75,7 @@ export default function Reports() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(null);
 
   const loadReports = async (rangeFrom = from, rangeTo = to) => {
     try {
@@ -85,6 +100,47 @@ export default function Reports() {
 
   const applyRange = () => {
     loadReports(from, to);
+  };
+
+  const exportReport = async (type) => {
+    try {
+      setExporting(type);
+      setError("");
+
+      const response = await api.get(
+        `/reports/export/${type}?from=${from}&to=${to}`,
+        {
+          responseType: "blob"
+        }
+      );
+
+      const url = window.URL.createObjectURL(
+        new Blob([response.data])
+      );
+
+      const link = document.createElement("a");
+
+      link.href = url;
+
+      link.setAttribute(
+        "download",
+        `${type}-${from}-to-${to}.csv`
+      );
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export error:", err);
+
+      setError("Failed to export report");
+    } finally {
+      setExporting(null);
+    }
   };
 
   const setToday = () => {
@@ -305,48 +361,54 @@ export default function Reports() {
           >
             <ReportStat
               label="Total Revenue"
-              value={formatMoney(data.stats.totalRevenue)}
+              value={formatMoney(data.stats?.totalRevenue)}
             />
 
             <ReportStat
               label="Payments"
-              value={data.stats.totalPaymentsCount}
+              value={data.stats?.totalPaymentsCount || 0}
             />
 
             <ReportStat
               label="Reservations Created"
-              value={data.stats.totalReservationsCreated}
+              value={data.stats?.totalReservationsCreated || 0}
             />
 
             <ReportStat
               label="Arrivals"
-              value={data.stats.totalArrivals}
+              value={data.stats?.totalArrivals || 0}
             />
 
             <ReportStat
               label="Departures"
-              value={data.stats.totalDepartures}
+              value={data.stats?.totalDepartures || 0}
             />
 
             <ReportStat
               label="Cancellations"
-              value={data.stats.totalCancellations}
+              value={data.stats?.totalCancellations || 0}
             />
 
             <ReportStat
               label="Occupancy"
-              value={`${data.stats.occupancyPercentage}%`}
+              value={`${data.stats?.occupancyPercentage || 0}%`}
             />
 
             <ReportStat
               label="Total Unpaid"
-              value={formatMoney(data.stats.totalUnpaid)}
+              value={formatMoney(data.stats?.totalUnpaid)}
             />
           </div>
 
           <div className="page-card">
             <div className="page-header">
               <h3 className="page-title">Revenue By Date</h3>
+
+              <ExportButton
+                type="revenue-by-date"
+                exporting={exporting}
+                onExport={exportReport}
+              />
             </div>
 
             <ResponsiveTable
@@ -359,6 +421,12 @@ export default function Reports() {
           <div className="page-card">
             <div className="page-header">
               <h3 className="page-title">Payments By Method</h3>
+
+              <ExportButton
+                type="payments-by-method"
+                exporting={exporting}
+                onExport={exportReport}
+              />
             </div>
 
             <ResponsiveTable
@@ -371,6 +439,12 @@ export default function Reports() {
           <div className="page-card">
             <div className="page-header">
               <h3 className="page-title">Reservations By Source</h3>
+
+              <ExportButton
+                type="reservations-by-source"
+                exporting={exporting}
+                onExport={exportReport}
+              />
             </div>
 
             <ResponsiveTable
@@ -383,6 +457,12 @@ export default function Reports() {
           <div className="page-card">
             <div className="page-header">
               <h3 className="page-title">Voucher Usage</h3>
+
+              <ExportButton
+                type="voucher-usage"
+                exporting={exporting}
+                onExport={exportReport}
+              />
             </div>
 
             <ResponsiveTable
@@ -395,6 +475,12 @@ export default function Reports() {
           <div className="page-card">
             <div className="page-header">
               <h3 className="page-title">Housekeeping Summary</h3>
+
+              <ExportButton
+                type="housekeeping"
+                exporting={exporting}
+                onExport={exportReport}
+              />
             </div>
 
             <ResponsiveTable
@@ -408,6 +494,12 @@ export default function Reports() {
           <div className="page-card">
             <div className="page-header">
               <h3 className="page-title">Current Room Status</h3>
+
+              <ExportButton
+                type="room-status"
+                exporting={exporting}
+                onExport={exportReport}
+              />
             </div>
 
             <ResponsiveTable
@@ -421,6 +513,12 @@ export default function Reports() {
           <div className="page-card">
             <div className="page-header">
               <h3 className="page-title">Unpaid Reservations</h3>
+
+              <ExportButton
+                type="unpaid"
+                exporting={exporting}
+                onExport={exportReport}
+              />
             </div>
 
             <ResponsiveTable
