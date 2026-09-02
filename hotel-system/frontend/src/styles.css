@@ -1,225 +1,25 @@
-* {
-  box-sizing: border-box;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #f3f4f6;
+  font-family: 'Inter', sans-serif;
+  @apply bg-gray-50 text-gray-900 antialiased;
 }
 
-header {
-  background: #111827;
-  color: white;
-  padding: 12px 16px;
-  display: flex;
-  gap: 16px;
-  align-items: center;
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { @apply bg-gray-300 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-gray-400; }
+
+/* Utility class for inputs */
+.input-primary {
+  @apply w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm;
 }
 
-header a {
-  color: white;
-  text-decoration: none;
-}
-
-main {
-  padding: 16px;
-}
-
-.card {
-  background: white;
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-input,
-select {
-  padding: 8px;
-  margin: 4px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-}
-
-button {
-  padding: 8px 12px;
-  margin: 4px;
-  border: none;
-  border-radius: 8px;
-  background: #2563eb;
-  color: white;
-  cursor: pointer;
-}
-
-button:hover {
-  opacity: 0.9;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-}
-
-th,
-td {
-  padding: 10px;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
-}
-
-.error {
-  color: red;
-}
-
-.success {
-  color: green;
-}
-
-.button-link {
-  display: inline-block;
-  padding: 8px 12px;
-  margin: 4px;
-  border-radius: 8px;
-  background: #2563eb;
-  color: white;
-  text-decoration: none;
-}
-
-.button-link:hover {
-  opacity: 0.9;
-}
-
-.invoice {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.no-print {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-@media print {
-  header,
-  .no-print {
-    display: none !important;
-  }
-
-  body {
-    background: white;
-  }
-
-  .card {
-    box-shadow: none;
-    border: 1px solid #ddd;
-  }
-}
-
-.room-board {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.room-card {
-  border-radius: 12px;
-  padding: 12px;
-  color: white;
-  cursor: pointer;
-  min-height: 130px;
-}
-
-.room-card.selected {
-  outline: 3px solid #111827;
-}
-
-.room-card h3 {
-  margin: 0 0 8px 0;
-}
-
-.room-status-label {
-  margin-top: 8px;
-  font-weight: bold;
-  text-transform: uppercase;
-  font-size: 12px;
-}
-
-.status-available {
-  background: #16a34a;
-}
-
-.status-occupied {
-  background: #dc2626;
-}
-
-.status-reserved {
-  background: #2563eb;
-}
-
-.status-cleaning {
-  background: #f59e0b;
-  color: #111827;
-}
-
-.status-maintenance {
-  background: #f97316;
-}
-
-.status-blocked {
-  background: #6b7280;
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.dashboard-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.stat-card {
-  background: white;
-  border-radius: 10px;
-  padding: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.stat-label {
-  color: #6b7280;
-  font-size: 13px;
-  margin-top: 4px;
-}
-
-.dashboard-columns {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 16px;
-}
-
-.dashboard-columns .card {
-  margin-bottom: 0;
-}
-
-@media (max-width: 768px) {
-  .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.label-primary {
+  @apply block text-sm font-semibold text-gray-700 mb-1.5;
 }

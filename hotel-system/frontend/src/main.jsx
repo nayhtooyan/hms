@@ -5,6 +5,8 @@ import App from "./App.jsx";
 
 import "./styles.css";
 import "./responsive-pages.css";
+import "./pro-ui.css"; 
+
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

@@ -21,7 +21,8 @@ const translations = {
     refresh: "Refresh",
     loading: "Loading",
     reports: "Reports",
-    backups: "Backups"
+    backups: "Backups",
+    audit: "Audit Logs"
   },
 
   my: {
@@ -40,7 +41,8 @@ const translations = {
     refresh: "အသစ်ပြန်လုပ်ရန်",
     loading: "ဖတ်နေသည်",
     reports: "အစီရင်ခံစာများ",
-    backups: "အရန်သိမ်းမှုများ"
+    backups: "အရန်သိမ်းမှုများ",
+    audit: "စစ်ဆေးမှုမှတ်တမ်းများ"  
   }
 };
 

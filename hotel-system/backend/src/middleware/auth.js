@@ -12,7 +12,8 @@ const rolePermissions = {
     "housekeeping.*",
     "users.view",
     "reports.view",
-    "backups.manage"
+    "backups.manage",
+    "audit.view"
   ],
 
   reception: [

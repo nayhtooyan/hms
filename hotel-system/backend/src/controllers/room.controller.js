@@ -1,6 +1,9 @@
 const Room = require("../models/Room");
 const asyncHandler = require("../utils/asyncHandler");
 
+const { logAudit } = require("../utils/auditLogger");
+
+
 const getRooms = asyncHandler(async (req, res) => {
   const filter = {};
 
@@ -21,10 +24,20 @@ const createRoom = asyncHandler(async (req, res) => {
     active: true
   });
 
+  await logAudit(req, "CREATE", "Room", room._id, null, room.toObject());
+
   res.status(201).json(room);
 });
 
 const updateRoom = asyncHandler(async (req, res) => {
+  const oldRoom = await Room.findById(req.params.id);
+
+  if (!oldRoom) {
+    return res.status(404).json({
+      message: "Room not found"
+    });
+  }
+
   const room = await Room.findByIdAndUpdate(
     req.params.id,
     req.body,
@@ -34,17 +47,21 @@ const updateRoom = asyncHandler(async (req, res) => {
     }
   );
 
-  if (!room) {
-    return res.status(404).json({
-      message: "Room not found"
-    });
-  }
+  await logAudit(req, "UPDATE", "Room", room._id, oldRoom.toObject(), room.toObject());
 
   res.json(room);
 });
 
 const updateRoomStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
+
+  const oldRoom = await Room.findById(req.params.id);
+
+  if (!oldRoom) {
+    return res.status(404).json({
+      message: "Room not found"
+    });
+  }
 
   const room = await Room.findByIdAndUpdate(
     req.params.id,
@@ -62,10 +79,20 @@ const updateRoomStatus = asyncHandler(async (req, res) => {
     });
   }
 
+  await logAudit(req, "UPDATE_STATUS", "Room", room._id, oldRoom.toObject(), room.toObject());
+
   res.json(room);
 });
 
 const deleteRoom = asyncHandler(async (req, res) => {
+  const oldRoom = await Room.findById(req.params.id);
+
+  if (!oldRoom) {
+    return res.status(404).json({
+      message: "Room not found"
+    });
+  }
+
   const room = await Room.findByIdAndUpdate(
     req.params.id,
     {
@@ -83,6 +110,8 @@ const deleteRoom = asyncHandler(async (req, res) => {
       message: "Room not found"
     });
   }
+
+  await logAudit(req, "DELETE", "Room", room._id, oldRoom.toObject(), room.toObject());
 
   res.json({
     message: "Room disabled"

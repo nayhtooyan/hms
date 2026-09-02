@@ -1,0 +1,53 @@
+/* Pro Dashboard Styles */
+.dash-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.dash-kpi-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease;
+}
+
+.dash-kpi-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+
+.kpi-content h3 { font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+.kpi-content .value { font-size: 28px; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em; }
+
+.kpi-icon {
+  width: 48px; height: 48px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+
+/* Icon Backgrounds */
+.icon-blue { background: var(--info-light); }
+.icon-green { background: var(--success-light); }
+.icon-amber { background: var(--warning-light); }
+.icon-red { background: var(--danger-light); }
+.icon-indigo { background: var(--primary-light); }
+
+.dash-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 1200px) {
+  .dash-grid-2 { grid-template-columns: 2fr 1fr; } /* Wider left column for tables */
+}
+
+/* Occupancy Progress Bar */
+.progress-container { margin-top: 16px; }
+.progress-bar-bg { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--primary); border-radius: 999px; transition: width 1s ease; }
