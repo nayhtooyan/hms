@@ -1,203 +1,112 @@
 import { useEffect, useState } from "react";
 import api from "../api";
 import { useSettings } from "../SettingsContext";
-import ResponsiveTable from "../components/ResponsiveTable.jsx";
+import { useToast } from "../components/ToastContext";
+import Modal from "../components/Modal";
+import { Loader2, Search, Eye } from "lucide-react";
 
-const toInputDate = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
+const toInputDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 
 export default function AuditLogs() {
   const { formatDateTime } = useSettings();
-
+  const { addToast } = useToast();
   const [logs, setLogs] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
   const [selectedLog, setSelectedLog] = useState(null);
 
-  // Filters
   const today = toInputDate(new Date());
-  const [filters, setFilters] = useState({
-    from: today,
-    to: today,
-    userId: "",
-    entity: "",
-    action: ""
-  });
+  const [filters, setFilters] = useState({ from: today, to: today, userId: "", entity: "", action: "" });
 
-  const loadLogs = async () => {
+  const load = async () => {
     try {
       setLoading(true);
-      setError("");
-      
       const params = new URLSearchParams();
       if (filters.from) params.append("from", filters.from);
       if (filters.to) params.append("to", filters.to);
       if (filters.userId) params.append("userId", filters.userId);
       if (filters.entity) params.append("entity", filters.entity);
       if (filters.action) params.append("action", filters.action);
-
-      const response = await api.get(`/audit?${params.toString()}`);
-      setLogs(response.data.logs);
-      setUsers(response.data.users);
-    } catch (err) {
-      setError("Failed to load audit logs");
-    } finally {
-      setLoading(false);
-    }
+      const res = await api.get(`/audit?${params.toString()}`);
+      setLogs(res.data.logs); setUsers(res.data.users);
+    } catch { addToast("Failed to load logs", "error"); } finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    loadLogs();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const handleFilterChange = (e) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
+  const actionColors = {
+    CREATE: "bg-emerald-100 text-emerald-700",
+    UPDATE: "bg-blue-100 text-blue-700",
+    UPDATE_STATUS: "bg-amber-100 text-amber-700",
+    DELETE: "bg-red-100 text-red-700",
+    CHECK_IN: "bg-emerald-100 text-emerald-700",
+    CHECK_OUT: "bg-gray-100 text-gray-600",
+    CANCEL: "bg-red-100 text-red-700",
   };
-
-  const applyFilters = () => {
-    loadLogs();
-  };
-
-  const columns = [
-    {
-      key: "createdAt",
-      label: "Time",
-      render: (row) => formatDateTime(row.createdAt)
-    },
-    {
-      key: "userName",
-      label: "User",
-      render: (row) => (
-        <span>
-          <strong>{row.userName}</strong> <br />
-          <small style={{ color: "#6b7280" }}>{row.userRole}</small>
-        </span>
-      )
-    },
-    {
-      key: "action",
-      label: "Action",
-      render: (row) => <span className="ad-badge ad-badge-blue">{row.action}</span>
-    },
-    {
-      key: "entity",
-      label: "Target",
-      render: (row) => row.entity
-    },
-    {
-      key: "ipAddress",
-      label: "IP Address",
-      render: (row) => row.ipAddress || "-"
-    },
-    {
-      key: "actions",
-      label: "Details",
-      render: (row) => (
-        <button className="btn btn-secondary" onClick={() => setSelectedLog(row)}>
-          View Changes
-        </button>
-      )
-    }
-  ];
 
   return (
-    <div className="page">
-      <div className="page-card">
-        <div className="page-header">
-          <div>
-            <h2 className="page-title">Audit Logs</h2>
-            <div className="page-subtitle">Track all system activities and data changes.</div>
-          </div>
-        </div>
+    <div className="space-y-6 animate-fade-in">
+      <div><h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1><p className="text-gray-500 text-sm mt-1">Track all system activities and data changes.</p></div>
 
-        <div className="form-grid">
-          <div className="form-field">
-            <label>From Date</label>
-            <input type="date" name="from" value={filters.from} onChange={handleFilterChange} />
-          </div>
-          <div className="form-field">
-            <label>To Date</label>
-            <input type="date" name="to" value={filters.to} onChange={handleFilterChange} />
-          </div>
-          <div className="form-field">
-            <label>User</label>
-            <select name="userId" value={filters.userId} onChange={handleFilterChange}>
-              <option value="">All Users</option>
-              {users.map((u) => (
-                <option key={u._id} value={u._id}>
-                  {u.name} ({u.role})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-field">
-            <label>Entity</label>
-            <select name="entity" value={filters.entity} onChange={handleFilterChange}>
-              <option value="">All Entities</option>
-              <option value="Room">Room</option>
-              <option value="Reservation">Reservation</option>
-              <option value="Payment">Payment</option>
-              <option value="Voucher">Voucher</option>
-              <option value="User">User</option>
-              <option value="Settings">Settings</option>
-            </select>
-          </div>
-          <div className="form-actions">
-            <button className="btn btn-primary" onClick={applyFilters}>
-              Search Logs
-            </button>
-          </div>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="flex flex-wrap items-end gap-4">
+          <div><label className="label-primary">From</label><input type="date" value={filters.from} onChange={(e) => setFilters({...filters, from: e.target.value})} className="input-primary" /></div>
+          <div><label className="label-primary">To</label><input type="date" value={filters.to} onChange={(e) => setFilters({...filters, to: e.target.value})} className="input-primary" /></div>
+          <div><label className="label-primary">User</label><select value={filters.userId} onChange={(e) => setFilters({...filters, userId: e.target.value})} className="input-primary"><option value="">All</option>{users.map(u => <option key={u._id} value={u._id}>{u.name}</option>)}</select></div>
+          <div><label className="label-primary">Entity</label><select value={filters.entity} onChange={(e) => setFilters({...filters, entity: e.target.value})} className="input-primary"><option value="">All</option><option>Room</option><option>Reservation</option><option>Payment</option><option>Voucher</option><option>User</option><option>Settings</option></select></div>
+          <button onClick={load} className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all"><Search className="w-4 h-4 inline mr-2" />Search</button>
         </div>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
-
-      <div className="page-card">
-        {loading ? (
-          <div>Loading activities...</div>
-        ) : (
-          <ResponsiveTable
-            columns={columns}
-            data={logs}
-            emptyMessage="No activities found for this filter."
-          />
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {loading ? <div className="flex items-center justify-center py-20 text-gray-500"><Loader2 className="w-8 h-8 animate-spin mr-3" /> Loading...</div> : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead><tr className="bg-gray-50/50 border-b border-gray-100">
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Time</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">User</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Action</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Entity</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase hidden md:table-cell">IP</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Details</th>
+              </tr></thead>
+              <tbody className="divide-y divide-gray-50">
+                {logs.map((log) => (
+                  <tr key={log._id} className="hover:bg-gray-50/50">
+                    <td className="px-6 py-4 text-sm text-gray-500">{formatDateTime(log.createdAt)}</td>
+                    <td className="px-6 py-4"><div><p className="text-sm font-semibold">{log.userName}</p><p className="text-xs text-gray-400 capitalize">{log.userRole}</p></div></td>
+                    <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-full text-xs font-bold ${actionColors[log.action] || "bg-gray-100 text-gray-600"}`}>{log.action}</span></td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{log.entity}</td>
+                    <td className="px-6 py-4 text-sm text-gray-400 hidden md:table-cell">{log.ipAddress || "-"}</td>
+                    <td className="px-6 py-4 text-right"><button onClick={() => setSelectedLog(log)} className="p-2 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50"><Eye className="w-5 h-5" /></button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {logs.length === 0 && <div className="text-center py-16 text-gray-400">No activities found.</div>}
+          </div>
         )}
       </div>
 
-      {/* Modal to show Before/After data */}
-      {selectedLog && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000
-        }} onClick={() => setSelectedLog(null)}>
-          <div className="page-card" style={{ maxWidth: "600px", width: "90%", maxHeight: "80vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
-            <div className="page-header">
-              <h3 className="page-title">{selectedLog.action} {selectedLog.entity}</h3>
-              <button className="btn btn-secondary" onClick={() => setSelectedLog(null)}>Close</button>
+      <Modal isOpen={!!selectedLog} onClose={() => setSelectedLog(null)} title={`${selectedLog?.action} ${selectedLog?.entity}`} size="lg">
+        {selectedLog && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div><p className="text-xs text-gray-400 uppercase font-bold">User</p><p className="font-medium">{selectedLog.userName}</p></div>
+              <div><p className="text-xs text-gray-400 uppercase font-bold">Time</p><p className="font-medium">{formatDateTime(selectedLog.createdAt)}</p></div>
+              <div className="col-span-2"><p className="text-xs text-gray-400 uppercase font-bold">Device</p><p className="text-xs text-gray-500 break-all">{selectedLog.userAgent}</p></div>
             </div>
-            <p><strong>User:</strong> {selectedLog.userName}</p>
-            <p><strong>Time:</strong> {formatDateTime(selectedLog.createdAt)}</p>
-            <p><strong>Device:</strong> <small>{selectedLog.userAgent}</small></p>
-            
-            <hr />
-            <h4>Before:</h4>
-            <pre style={{ background: "#f3f4f6", padding: "10px", borderRadius: "8px", fontSize: "12px", overflowX: "auto" }}>
-              {JSON.stringify(selectedLog.before, null, 2) || "None"}
-            </pre>
-
-            <h4>After:</h4>
-            <pre style={{ background: "#f3f4f6", padding: "10px", borderRadius: "8px", fontSize: "12px", overflowX: "auto" }}>
-              {JSON.stringify(selectedLog.after, null, 2) || "None"}
-            </pre>
+            <div>
+              <p className="text-xs text-gray-400 uppercase font-bold mb-2">Before</p>
+              <pre className="bg-gray-50 p-4 rounded-xl text-xs overflow-x-auto max-h-60">{JSON.stringify(selectedLog.before, null, 2) || "None"}</pre>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase font-bold mb-2">After</p>
+              <pre className="bg-gray-50 p-4 rounded-xl text-xs overflow-x-auto max-h-60">{JSON.stringify(selectedLog.after, null, 2) || "None"}</pre>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

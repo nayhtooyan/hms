@@ -4,8 +4,24 @@ const reservationSchema = new mongoose.Schema(
   {
     bookingNo: { type: String, unique: true },
     roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room", required: true },
-    guest: { name: String, phone: String, idNumber: String, notes: String },
-    source: { type: String, enum: ["walk_in", "phone", "online", "agent", "other"], default: "walk_in" },
+    guest: {
+            name: String,
+            phone: String,
+            guestType: {
+              type: String,
+              enum: ["local", "foreigner"],
+              default: "local"
+            },
+            nrc: String,
+            passport: String,
+            idNumber: String,
+            notes: String
+          },
+    source: {
+      type: String,
+      enum: ["walk_in", "reception", "phone", "online", "agent", "other"],
+      default: "walk_in"
+    },
     status: { type: String, enum: ["reserved", "checked_in", "checked_out", "cancelled"], default: "reserved" },
     scheduledCheckIn: { type: Date, required: true },
     scheduledCheckOut: { type: Date, required: true },

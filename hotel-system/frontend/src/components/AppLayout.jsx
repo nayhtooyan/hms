@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { useLanguage } from "../LanguageContext";
+import { useSettings } from "../SettingsContext";
+
 import { 
   LayoutDashboard, BedDouble, Home, CalendarCheck, Ticket, CreditCard, 
-  Users, Settings, Sparkles, Menu, X, LogOut, ChevronDown 
+  Users, Settings, Sparkles, Menu, X, LogOut, ChevronDown,
+  BarChart3, HardDrive, Brush
 } from "lucide-react";
 
 const navItems = [
@@ -14,7 +17,10 @@ const navItems = [
   { to: "/reservations", labelKey: "reservations", icon: CalendarCheck, roles: ["admin", "manager", "reception"] },
   { to: "/vouchers", labelKey: "vouchers", icon: Ticket, roles: ["admin", "manager", "reception"] },
   { to: "/payments", labelKey: "payments", icon: CreditCard, roles: ["admin", "manager", "reception"] },
-  { to: "/audit", labelKey: "audit", icon: Sparkles, roles: ["admin", "manager"] },
+  { to: "/housekeeping", labelKey: "housekeeping", icon: Brush, roles: ["admin", "manager", "reception", "cleaner", "maintenance"] },
+  { to: "/reports", labelKey: "reports", icon: BarChart3, roles: ["admin", "manager"] },
+  { to: "/backups", labelKey: "backups", icon: HardDrive, roles: ["admin"] },
+  { to: "/audit", labelKey: "auditLogs", icon: Sparkles, roles: ["admin", "manager"] },
   { to: "/users", labelKey: "users", icon: Users, roles: ["admin"] },
   { to: "/settings", labelKey: "settings", icon: Settings, roles: ["admin"] },
 ];
@@ -22,6 +28,7 @@ const navItems = [
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const { t, language, changeLanguage } = useLanguage();
+  const { settings } = useSettings();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
@@ -51,7 +58,9 @@ export default function AppLayout() {
           <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
             <BedDouble className="w-6 h-6" />
           </div>
-          <span className="text-xl font-bold text-white tracking-tight">{t("hotelManagement")}</span>
+          <span className="text-xl font-bold text-white tracking-tight">
+            {settings?.hotelName || t("hotelManagement")}
+          </span>
         </div>
 
         {/* Navigation */}
@@ -83,11 +92,8 @@ export default function AppLayout() {
               <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
               <p className="text-xs text-slate-400 capitalize">{user?.role}</p>
             </div>
-            <button 
-              onClick={logout} 
-              className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700/50 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
+            <button className="btn sidebar-logout" onClick={() => { setSidebarOpen(false); logout(); }}>
+              {t("logout")}
             </button>
           </div>
         </div>

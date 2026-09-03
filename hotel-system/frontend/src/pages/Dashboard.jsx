@@ -1,108 +1,58 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
 import api from "../api";
-
-import "./dashboard.css";
 import { useSettings } from "../SettingsContext";
+import { useLanguage } from "../LanguageContext";
+import {
+  Hotel, BedDouble, Users, CalendarCheck, TrendingUp, DollarSign,
+  ArrowUpRight, ArrowDownRight, Loader2, RefreshCw, AlertTriangle,
+  Clock, CreditCard
+} from "lucide-react";
 
+function KpiCard({ icon: Icon, label, value, color = "indigo", subtitle }) {
+  const colors = {
+    indigo: "bg-indigo-50 text-indigo-600",
+    emerald: "bg-emerald-50 text-emerald-600",
+    amber: "bg-amber-50 text-amber-600",
+    red: "bg-red-50 text-red-600",
+    blue: "bg-blue-50 text-blue-600",
+    purple: "bg-purple-50 text-purple-600",
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-500">{label}</p>
+          <p className="text-2xl font-extrabold text-gray-900 mt-2 tracking-tight">{value}</p>
+          {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+        </div>
+        <div className={`w-12 h-12 rounded-xl ${colors[color]} flex items-center justify-center`}>
+          <Icon className="w-6 h-6" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function StatusBadge({ status }) {
   const value = String(status || "").toLowerCase();
-
-  let color = "gray";
-
-  if (value === "available") color = "green";
-  if (value === "checked_in") color = "green";
-  if (value === "reserved") color = "blue";
-  if (value === "occupied") color = "red";
-  if (value === "cancelled") color = "red";
-  if (value === "cleaning") color = "amber";
-  if (value === "maintenance") color = "orange";
-  if (value === "blocked") color = "gray";
-  if (value === "checked_out") color = "gray";
+  const styles = {
+    available: "bg-emerald-100 text-emerald-700",
+    checked_in: "bg-emerald-100 text-emerald-700",
+    reserved: "bg-blue-100 text-blue-700",
+    occupied: "bg-red-100 text-red-700",
+    cancelled: "bg-red-100 text-red-700",
+    cleaning: "bg-amber-100 text-amber-700",
+    maintenance: "bg-orange-100 text-orange-700",
+    blocked: "bg-gray-100 text-gray-600",
+    checked_out: "bg-gray-100 text-gray-600",
+  };
 
   return (
-    <span className={`ad-badge ad-badge-${color}`}>
+    <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${styles[value] || "bg-gray-100 text-gray-600"}`}>
       {status || "-"}
     </span>
-  );
-}
-
-function StatCard({ icon, label, value, tone = "blue" }) {
-  return (
-    <div className={`ad-card ad-stat ad-stat-${tone}`}>
-      <div className="ad-stat-top">
-        <div className="ad-stat-icon">{icon}</div>
-        <div className="ad-stat-label">{label}</div>
-      </div>
-
-      <div className="ad-stat-value">{value}</div>
-    </div>
-  );
-}
-
-function OccupancyCard({ value }) {
-  const occupancy = Math.min(100, Math.max(0, Number(value || 0)));
-
-  return (
-    <div className="ad-card ad-stat ad-stat-purple">
-      <div className="ad-stat-top">
-        <div className="ad-stat-icon">📈</div>
-        <div className="ad-stat-label">Occupancy</div>
-      </div>
-
-      <div className="ad-stat-value">{occupancy}%</div>
-
-      <div className="ad-progress">
-        <div
-          className="ad-progress-fill"
-          style={{ width: `${occupancy}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function ResponsiveTable({
-  columns,
-  data,
-  keyField = "_id",
-  emptyMessage
-}) {
-  if (!data || data.length === 0) {
-    return <div className="ad-empty">{emptyMessage || "No data found."}</div>;
-  }
-
-  return (
-    <div className="ad-table-wrap">
-      <table className="ad-table">
-        <thead>
-          <tr>
-            {columns.map((column) => (
-              <th key={column.key}>{column.label}</th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {data.map((row, index) => (
-            <tr key={row[keyField] || index}>
-              {columns.map((column) => (
-                <td
-                  key={column.key}
-                  data-label={column.label}
-                >
-                  {column.render
-                    ? column.render(row)
-                    : row[column.key]}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -111,450 +61,244 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-
   const { formatMoney, formatDateTime } = useSettings();
+  const { t } = useLanguage();
 
   const loadDashboard = async () => {
     try {
       setRefreshing(true);
       setError("");
-
       const response = await api.get("/dashboard/summary");
-
       setData(response.data);
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Failed to load dashboard"
-      );
+      setError(err.response?.data?.message || "Failed to load dashboard");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
+  useEffect(() => { loadDashboard(); }, []);
 
   const today = new Date().toLocaleDateString(undefined, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric"
+    weekday: "long", year: "numeric", month: "long", day: "numeric"
   });
 
   if (loading) {
     return (
-      <div className="advanced-dashboard">
-        <div className="ad-card">Loading dashboard...</div>
+      <div className="flex items-center justify-center py-32">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
       </div>
     );
   }
 
   if (error && !data) {
     return (
-      <div className="advanced-dashboard">
-        <div className="ad-card">
-          <div className="ad-alert-error">{error}</div>
-
-          <br />
-
-          <button className="ad-btn ad-btn-primary" onClick={loadDashboard}>
-            Retry
-          </button>
-        </div>
+      <div className="text-center py-32">
+        <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button onClick={loadDashboard} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold">Retry</button>
       </div>
     );
   }
 
   const stats = data?.stats || {};
-
   const arrivals = data?.arrivals || [];
   const departures = data?.departures || [];
-  const unpaidReservations = data?.unpaidReservations || [];
-  const roomsNeedingAttention = data?.roomsNeedingAttention || [];
-  const recentReservations = data?.recentReservations || [];
   const recentPayments = data?.recentPayments || [];
-
-  const arrivalColumns = [
-    {
-      key: "bookingNo",
-      label: "Booking"
-    },
-    {
-      key: "room",
-      label: "Room",
-      render: (row) => row.roomId?.roomNumber || "-"
-    },
-    {
-      key: "guest",
-      label: "Guest",
-      render: (row) => row.guest?.name || "-"
-    },
-    {
-      key: "scheduledCheckIn",
-      label: "Check-In",
-      render: (row) => formatDateTime(row.scheduledCheckIn)
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (row) => <StatusBadge status={row.status} />
-    }
-  ];
-
-  const departureColumns = [
-    {
-      key: "bookingNo",
-      label: "Booking"
-    },
-    {
-      key: "room",
-      label: "Room",
-      render: (row) => row.roomId?.roomNumber || "-"
-    },
-    {
-      key: "guest",
-      label: "Guest",
-      render: (row) => row.guest?.name || "-"
-    },
-    {
-      key: "scheduledCheckOut",
-      label: "Check-Out",
-      render: (row) => formatDateTime(row.scheduledCheckOut)
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (row) => <StatusBadge status={row.status} />
-    }
-  ];
-
-  const unpaidColumns = [
-    {
-      key: "bookingNo",
-      label: "Booking"
-    },
-    {
-      key: "room",
-      label: "Room"
-    },
-    {
-      key: "guest",
-      label: "Guest"
-    },
-    {
-      key: "total",
-      label: "Total",
-      render: (row) => formatMoney(row.total)
-    },
-    {
-      key: "paid",
-      label: "Paid",
-      render: (row) => formatMoney(row.paid)
-    },
-    {
-      key: "balance",
-      label: "Balance",
-      render: (row) => (
-        <span className="ad-negative">
-          {formatMoney(row.balance)}
-        </span>
-      )
-    }
-  ];
-
-  const roomsAttentionColumns = [
-    {
-      key: "roomNumber",
-      label: "Room"
-    },
-    {
-      key: "roomType",
-      label: "Type"
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (row) => <StatusBadge status={row.status} />
-    }
-  ];
-
-  const recentReservationColumns = [
-    {
-      key: "bookingNo",
-      label: "Booking"
-    },
-    {
-      key: "room",
-      label: "Room",
-      render: (row) => row.roomId?.roomNumber || "-"
-    },
-    {
-      key: "guest",
-      label: "Guest",
-      render: (row) => row.guest?.name || "-"
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (row) => <StatusBadge status={row.status} />
-    },
-    {
-      key: "createdAt",
-      label: "Created",
-      render: (row) => formatDateTime(row.createdAt)
-    }
-  ];
-
-  const recentPaymentColumns = [
-    {
-      key: "receiptNo",
-      label: "Receipt"
-    },
-    {
-      key: "booking",
-      label: "Booking",
-      render: (row) => row.reservationId?.bookingNo || "-"
-    },
-    {
-      key: "room",
-      label: "Room",
-      render: (row) => row.reservationId?.roomId?.roomNumber || "-"
-    },
-    {
-      key: "method",
-      label: "Method"
-    },
-    {
-      key: "amount",
-      label: "Amount",
-      render: (row) => (
-        <span className="ad-positive">
-          {formatMoney(row.amount)}
-        </span>
-      )
-    },
-    {
-      key: "createdAt",
-      label: "Date",
-      render: (row) => formatDateTime(row.createdAt)
-    }
-  ];
+  const roomsNeedingAttention = data?.roomsNeedingAttention || [];
 
   return (
-    <div className="advanced-dashboard">
-      <div className="ad-card ad-header">
+    <div className="space-y-8 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2>Hotel Dashboard</h2>
+          <h1 className="text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">{t("dashboardTitle")}</h1>
+          <p className="text-gray-500 text-sm mt-1">{today}</p>
+        </div>
+        <button
+          onClick={loadDashboard}
+          disabled={refreshing}
+          className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
+        >
+          <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+          {refreshing ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
 
-          <div className="ad-subtitle">{today}</div>
+      {/* KPI Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KpiCard icon={DollarSign} label="Today Revenue" value={formatMoney(stats.todayRevenue)} color="emerald"  />
+        <KpiCard icon={TrendingUp} label="Monthly Revenue" value={formatMoney(stats.monthlyRevenue)} color="emerald" />
+        <KpiCard icon={ArrowUpRight} label="Arrivals Today" value={stats.todayArrivals || 0} color="blue" />
+        <KpiCard icon={ArrowDownRight} label="Departures Today" value={stats.todayDepartures || 0} color="amber" />
+      </div>
+
+      {/* Occupancy & Room Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Occupancy */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <h3 className="text-sm font-semibold text-gray-500 mb-4">{t("occupancyRate")}</h3>
+          <div className="flex items-end gap-4">
+            <p className="text-4xl font-extrabold text-gray-900">{stats.occupancyPercentage || 0}%</p>
+            <p className="text-sm text-gray-400 mb-1">{stats.occupiedRooms || 0} of {stats.totalRooms || 0} rooms</p>
+          </div>
+          <div className="mt-4 h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-indigo-600 rounded-full transition-all duration-1000" style={{ width: `${stats.occupancyPercentage || 0}%` }} />
+          </div>
         </div>
 
-        <div className="ad-header-actions">
-          <Link className="ad-btn" to="/room-board">
-            Room Board
-          </Link>
-
-          <Link className="ad-btn" to="/reservations">
-            Reservations
-          </Link>
-
-          <Link className="ad-btn" to="/payments">
-            Payments
-          </Link>
-
-          <Link className="ad-btn" to="/housekeeping">
-            Housekeeping
-          </Link>
-
-          <button
-            className="ad-btn ad-btn-primary"
-            onClick={loadDashboard}
-            disabled={refreshing}
-          >
-            {refreshing ? "Refreshing..." : "Refresh"}
-          </button>
+        {/* Room Status Grid */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6">
+          <h3 className="text-sm font-semibold text-gray-500 mb-4">{t("roomStatusOverview")}</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { label: "Available", value: stats.availableRooms, color: "emerald" },
+              { label: "Occupied", value: stats.occupiedRooms, color: "red" },
+              { label: "Reserved", value: stats.reservedRooms, color: "blue" },
+              { label: "Cleaning", value: stats.cleaningRooms, color: "amber" },
+            ].map((item) => (
+              <div key={item.label} className={`p-4 rounded-xl bg-${item.color}-50 text-center`}>
+                <p className={`text-2xl font-extrabold text-${item.color}-600`}>{item.value || 0}</p>
+                <p className="text-xs font-medium text-gray-500 mt-1">{item.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {error ? <div className="ad-alert-error">{error}</div> : null}
-
-      <div className="ad-kpi-grid">
-        <StatCard
-          icon=""
-          label="Total Rooms"
-          value={stats.totalRooms || 0}
-          tone="blue"
-        />
-
-        <StatCard
-          icon=""
-          label="Available Rooms"
-          value={stats.availableRooms || 0}
-          tone="green"
-        />
-
-        <StatCard
-          icon=""
-          label="Occupied Rooms"
-          value={stats.occupiedRooms || 0}
-          tone="red"
-        />
-
-        <StatCard
-          icon=""
-          label="Reserved Rooms"
-          value={stats.reservedRooms || 0}
-          tone="blue"
-        />
-
-        <StatCard
-          icon=""
-          label="Cleaning Rooms"
-          value={stats.cleaningRooms || 0}
-          tone="amber"
-        />
-
-        <StatCard
-          icon=""
-          label="Maintenance Rooms"
-          value={stats.maintenanceRooms || 0}
-          tone="orange"
-        />
-
-        <StatCard
-          icon=""
-          label="Blocked Rooms"
-          value={stats.blockedRooms || 0}
-          tone="gray"
-        />
-
-        <StatCard
-          icon=""
-          label="Arrivals Today"
-          value={stats.todayArrivals || 0}
-          tone="purple"
-        />
-
-        <StatCard
-          icon=""
-          label="Departures Today"
-          value={stats.todayDepartures || 0}
-          tone="purple"
-        />
-
-        <OccupancyCard value={stats.occupancyPercentage || 0} />
-
-        <StatCard
-          icon=""
-          label="Today Revenue"
-          value={formatMoney(stats.todayRevenue)}
-          tone="green"
-        />
-
-        <StatCard
-          icon=""
-          label="Monthly Revenue"
-          value={formatMoney(stats.monthlyRevenue)}
-          tone="green"
-        />
-
-        <StatCard
-          icon=""
-          label="Cleaning Tasks"
-          value={stats.pendingCleanTasks || 0}
-          tone="amber"
-        />
-
-        <StatCard
-          icon=""
-          label="Maintenance Tasks"
-          value={stats.pendingMaintenanceTasks || 0}
-          tone="orange"
-        />
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-3">
+        <Link to="/reservations" className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all text-sm">{t("newReservation")}</Link>
+        <Link to="/room-board" className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all text-sm">{t("roomBoard")}</Link>
+        <Link to="/payments" className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all text-sm">{t("recordPayment")}</Link>
       </div>
 
-      <div className="ad-content-grid">
-        <div className="ad-card">
-          <div className="ad-card-header">
-            <h3>Today Arrivals</h3>
-            <span className="ad-count">{arrivals.length}</span>
+      {/* Tables Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Arrivals */}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+            <h3 className="font-bold text-gray-800">{t("todayArrivals")}</h3>
+            <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold">{arrivals.length}</span>
           </div>
-
-          <ResponsiveTable
-            columns={arrivalColumns}
-            data={arrivals}
-            emptyMessage="No arrivals today."
-          />
+          {arrivals.length === 0 ? (
+            <div className="text-center py-12 text-gray-400 text-sm">No arrivals today</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead><tr className="bg-gray-50/50">
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Booking</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Room</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Guest</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
+                </tr></thead>
+                <tbody className="divide-y divide-gray-50">
+                  {arrivals.map((row) => (
+                    <tr key={row._id} className="hover:bg-gray-50/50">
+                      <td className="px-6 py-3 text-sm font-medium">{row.bookingNo}</td>
+                      <td className="px-6 py-3 text-sm text-gray-600">{row.roomId?.roomNumber || "-"}</td>
+                      <td className="px-6 py-3 text-sm text-gray-600">{row.guest?.name || "-"}</td>
+                      <td className="px-6 py-3"><StatusBadge status={row.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
-        <div className="ad-card">
-          <div className="ad-card-header">
-            <h3>Today Departures</h3>
-            <span className="ad-count">{departures.length}</span>
+        {/* Departures */}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+            <h3 className="font-bold text-gray-800">{t("todayDepartures")}</h3>
+            <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-xs font-bold">{departures.length}</span>
           </div>
-
-          <ResponsiveTable
-            columns={departureColumns}
-            data={departures}
-            emptyMessage="No departures today."
-          />
+          {departures.length === 0 ? (
+            <div className="text-center py-12 text-gray-400 text-sm">No departures today</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead><tr className="bg-gray-50/50">
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Booking</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Room</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Guest</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
+                </tr></thead>
+                <tbody className="divide-y divide-gray-50">
+                  {departures.map((row) => (
+                    <tr key={row._id} className="hover:bg-gray-50/50">
+                      <td className="px-6 py-3 text-sm font-medium">{row.bookingNo}</td>
+                      <td className="px-6 py-3 text-sm text-gray-600">{row.roomId?.roomNumber || "-"}</td>
+                      <td className="px-6 py-3 text-sm text-gray-600">{row.guest?.name || "-"}</td>
+                      <td className="px-6 py-3"><StatusBadge status={row.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
-        <div className="ad-card">
-          <div className="ad-card-header">
-            <h3>Unpaid Reservations</h3>
-            <span className="ad-count">{unpaidReservations.length}</span>
+        {/* Recent Payments */}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+            <h3 className="font-bold text-gray-800">{t("recentPayments")}</h3>
           </div>
-
-          <ResponsiveTable
-            columns={unpaidColumns}
-            data={unpaidReservations}
-            keyField="id"
-            emptyMessage="No unpaid reservations found."
-          />
+          {recentPayments.length === 0 ? (
+            <div className="text-center py-12 text-gray-400 text-sm">No recent payments</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead><tr className="bg-gray-50/50">
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Receipt</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Room</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Method</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Amount</th>
+                </tr></thead>
+                <tbody className="divide-y divide-gray-50">
+                  {recentPayments.map((row) => (
+                    <tr key={row._id} className="hover:bg-gray-50/50">
+                      <td className="px-6 py-3 text-sm font-medium">{row.receiptNo}</td>
+                      <td className="px-6 py-3 text-sm text-gray-600">{row.reservationId?.roomId?.roomNumber || "-"}</td>
+                      <td className="px-6 py-3 text-sm text-gray-600 capitalize">{row.method}</td>
+                      <td className="px-6 py-3 text-sm font-bold text-emerald-600">{formatMoney(row.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
-        <div className="ad-card">
-          <div className="ad-card-header">
-            <h3>Rooms Needing Attention</h3>
-            <span className="ad-count">{roomsNeedingAttention.length}</span>
+        {/* Needs Attention */}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+            <h3 className="font-bold text-gray-800">{t("needsAttention")}</h3>
+            <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold">{roomsNeedingAttention.length}</span>
           </div>
-
-          <ResponsiveTable
-            columns={roomsAttentionColumns}
-            data={roomsNeedingAttention}
-            emptyMessage="All rooms are okay."
-          />
-        </div>
-
-        <div className="ad-card">
-          <div className="ad-card-header">
-            <h3>Recent Reservations</h3>
-            <span className="ad-count">{recentReservations.length}</span>
-          </div>
-
-          <ResponsiveTable
-            columns={recentReservationColumns}
-            data={recentReservations}
-            emptyMessage="No reservations found."
-          />
-        </div>
-
-        <div className="ad-card">
-          <div className="ad-card-header">
-            <h3>Recent Payments</h3>
-            <span className="ad-count">{recentPayments.length}</span>
-          </div>
-
-          <ResponsiveTable
-            columns={recentPaymentColumns}
-            data={recentPayments}
-            emptyMessage="No payments found."
-          />
+          {roomsNeedingAttention.length === 0 ? (
+            <div className="text-center py-12 text-gray-400 text-sm">All rooms are okay</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead><tr className="bg-gray-50/50">
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Room</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
+                </tr></thead>
+                <tbody className="divide-y divide-gray-50">
+                  {roomsNeedingAttention.map((row) => (
+                    <tr key={row._id} className="hover:bg-gray-50/50">
+                      <td className="px-6 py-3 text-sm font-bold">{row.roomNumber}</td>
+                      <td className="px-6 py-3 text-sm text-gray-600">{row.roomType}</td>
+                      <td className="px-6 py-3"><StatusBadge status={row.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

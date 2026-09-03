@@ -1,22 +1,34 @@
 import { useEffect, useState } from "react";
 import api from "../api";
+import { useSettings } from "../SettingsContext";
 import { useToast } from "../components/ToastContext";
 import Modal from "../components/Modal";
-import { Plus, Search, Home, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Search, Home, Pencil, Trash2, Loader2, Users } from "lucide-react";
+import { useLanguage } from "../LanguageContext";
 
 export default function Rooms() {
+  const { formatMoney } = useSettings();
   const { addToast } = useToast();
+  const roomTypes = [
+    { value: "Standard", label: "Standard", desc: "Basic room with essential facilities" },
+    { value: "Superior", label: "Superior", desc: "Better/larger than Standard" },
+    { value: "Deluxe", label: "Deluxe", desc: "More spacious and upgraded facilities" },
+    { value: "Premium", label: "Premium", desc: "Higher-end room with better amenities/view" },
+    { value: "Executive", label: "Executive", desc: "Designed for business/VIP guests" },
+    { value: "Family Room", label: "Family Room", desc: "Designed for families, usually more beds" },
+  ];
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
+  const { t } = useLanguage();
+
   const [formData, setFormData] = useState({
     roomNumber: "",
     floor: "1",
     roomType: "Standard",
+    maxGuests: "2",
     basePrice: "",
     extraBedPrice: "0",
     overtimeHourlyRate: "0",
@@ -42,17 +54,19 @@ export default function Rooms() {
     if (room) {
       setFormData({
         roomNumber: room.roomNumber,
-        floor: room.floor,
+        floor: String(room.floor || 1),
         roomType: room.roomType,
-        basePrice: room.basePrice,
-        extraBedPrice: room.extraBedPrice,
-        overtimeHourlyRate: room.overtimeHourlyRate,
+        maxGuests: String(room.maxGuests || 2),
+        basePrice: String(room.basePrice),
+        extraBedPrice: String(room.extraBedPrice || 0),
+        overtimeHourlyRate: String(room.overtimeHourlyRate || 0),
       });
     } else {
       setFormData({
         roomNumber: "",
         floor: "1",
         roomType: "Standard",
+        maxGuests: "2",
         basePrice: "",
         extraBedPrice: "0",
         overtimeHourlyRate: "0",
@@ -65,8 +79,10 @@ export default function Rooms() {
     e.preventDefault();
     try {
       const payload = {
-        ...formData,
+        roomNumber: formData.roomNumber,
         floor: Number(formData.floor),
+        roomType: formData.roomType,
+        maxGuests: Number(formData.maxGuests),
         basePrice: Number(formData.basePrice),
         extraBedPrice: Number(formData.extraBedPrice),
         overtimeHourlyRate: Number(formData.overtimeHourlyRate),
@@ -97,7 +113,7 @@ export default function Rooms() {
     }
   };
 
-  const filteredRooms = rooms.filter(room => 
+  const filteredRooms = rooms.filter(room =>
     room.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
     room.roomType.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -113,34 +129,30 @@ export default function Rooms() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Rooms Management</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage your hotel rooms, pricing, and status.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("roomsTitle")}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t("roomsSubtitle")}</p>
         </div>
-        <button 
+        <button
           onClick={() => handleOpenModal()}
           className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all active:scale-95"
         >
-          <Plus className="w-5 h-5" /> Add New Room
+          <Plus className="w-5 h-5" /> {t("addNewRoom")}
         </button>
       </div>
 
-      {/* Search Bar */}
       <div className="relative max-w-md">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-        <input 
-          type="text" 
-          placeholder="Search by room number or type..." 
+        <input
+          type="text"
+          placeholder="Search by room number or type..."
           className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      {/* Rooms Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-20 text-gray-500">
@@ -151,12 +163,13 @@ export default function Rooms() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-100">
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Room</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Floor</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Price / Night</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{t("room")}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{t("type")}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{t("capacity")}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{t("floor")}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{t("pricePerNight")}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{t("status")}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">{t("actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -171,8 +184,13 @@ export default function Rooms() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600 font-medium">{room.roomType}</td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-600">
+                        <Users className="w-3 h-3" /> {room.maxGuests || 2}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-gray-600">{room.floor}</td>
-                    <td className="px-6 py-4 font-semibold text-gray-900">${room.basePrice}</td>
+                    <td className="px-6 py-4 font-semibold text-gray-900">{formatMoney(room.basePrice)}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${statusColors[room.status] || "bg-gray-100 text-gray-600"}`}>
                         {room.status}
@@ -180,13 +198,13 @@ export default function Rooms() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => handleOpenModal(room)}
                           className="p-2 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
                         >
                           <Pencil className="w-5 h-5" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(room._id)}
                           className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                         >
@@ -205,81 +223,107 @@ export default function Rooms() {
         )}
       </div>
 
-      {/* Add/Edit Room Modal */}
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         title={editingRoom ? "Edit Room" : "Add New Room"}
       >
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label className="label-primary">Room Number</label>
-              <input 
-                type="text" 
-                className="input-primary" 
-                value={formData.roomNumber} 
-                onChange={(e) => setFormData({...formData, roomNumber: e.target.value})}
+              <input
+                type="text"
+                className="input-primary"
+                value={formData.roomNumber}
+                onChange={(e) => setFormData({ ...formData, roomNumber: e.target.value })}
                 required
               />
             </div>
             <div>
               <label className="label-primary">Room Type</label>
-              <input 
-                type="text" 
-                className="input-primary" 
-                value={formData.roomType} 
-                onChange={(e) => setFormData({...formData, roomType: e.target.value})}
-              />
+              <select
+                name="roomType"
+                value={formData.roomType}
+                onChange={(e) => setFormData({ ...formData, roomType: e.target.value })}
+                className="input-primary"
+              >
+                {roomTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                {roomTypes.find(t => t.value === formData.roomType)?.desc || ""}
+              </p>
+            </div>
+            <div>
+              <label className="label-primary">Max Guests (Capacity)</label>
+              <select
+                name="maxGuests"
+                value={formData.maxGuests}
+                onChange={(e) => setFormData({ ...formData, maxGuests: e.target.value })}
+                className="input-primary"
+              >
+                <option value="1">1 Person (Single)</option>
+                <option value="2">2 Persons (Double)</option>
+                <option value="3">3 Persons</option>
+                <option value="4">4 Persons (Family)</option>
+                <option value="5">5 Persons</option>
+                <option value="6">6 Persons (Large Family)</option>
+                <option value="8">8 Persons (Group)</option>
+                <option value="10">10 Persons (Group)</option>
+              </select>
             </div>
             <div>
               <label className="label-primary">Floor</label>
-              <input 
-                type="number" 
-                className="input-primary" 
-                value={formData.floor} 
-                onChange={(e) => setFormData({...formData, floor: e.target.value})}
+              <input
+                type="number"
+                className="input-primary"
+                value={formData.floor}
+                onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
               />
             </div>
             <div>
               <label className="label-primary">Base Price ($)</label>
-              <input 
-                type="number" 
-                className="input-primary" 
-                value={formData.basePrice} 
-                onChange={(e) => setFormData({...formData, basePrice: e.target.value})}
+              <input
+                type="number"
+                className="input-primary"
+                value={formData.basePrice}
+                onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })}
                 required
               />
             </div>
             <div>
               <label className="label-primary">Extra Bed Price</label>
-              <input 
-                type="number" 
-                className="input-primary" 
-                value={formData.extraBedPrice} 
-                onChange={(e) => setFormData({...formData, extraBedPrice: e.target.value})}
+              <input
+                type="number"
+                className="input-primary"
+                value={formData.extraBedPrice}
+                onChange={(e) => setFormData({ ...formData, extraBedPrice: e.target.value })}
               />
             </div>
             <div>
               <label className="label-primary">Overtime Rate (Hr)</label>
-              <input 
-                type="number" 
-                className="input-primary" 
-                value={formData.overtimeHourlyRate} 
-                onChange={(e) => setFormData({...formData, overtimeHourlyRate: e.target.value})}
+              <input
+                type="number"
+                className="input-primary"
+                value={formData.overtimeHourlyRate}
+                onChange={(e) => setFormData({ ...formData, overtimeHourlyRate: e.target.value })}
               />
             </div>
           </div>
 
           <div className="flex gap-4 pt-4">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => setIsModalOpen(false)}
               className="flex-1 px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
-            <button 
+            <button
               type="submit"
               className="flex-1 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all"
             >

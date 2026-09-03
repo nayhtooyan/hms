@@ -16,6 +16,10 @@ const roomSchema = new mongoose.Schema(
       type: String,
       default: "Standard"
     },
+    maxGuests: {
+      type: Number,
+      default: 2
+    },
     status: {
       type: String,
       enum: [
@@ -36,10 +40,15 @@ const roomSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    extraPersonPrice: {
+      type: Number,
+      default: 0
+    },
     overtimeHourlyRate: {
       type: Number,
       default: 0
     },
+    amenities: [String],
     notes: String,
     active: {
       type: Boolean,

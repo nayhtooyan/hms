@@ -1,467 +1,333 @@
 import { useEffect, useState } from "react";
-
 import api from "../api";
-
-import ResponsiveTable from "../components/ResponsiveTable.jsx";
 import { useSettings } from "../SettingsContext";
+import { useToast } from "../components/ToastContext";
+import Modal from "../components/Modal";
+import { Plus, Search, Loader2, LogIn, LogOut, XCircle, Ticket, UserPlus, Users } from "lucide-react";
+import { useLanguage } from "../LanguageContext";
 
+function StatusBadge({ status }) {
+  const styles = {
+    reserved: "bg-blue-100 text-blue-700",
+    checked_in: "bg-emerald-100 text-emerald-700",
+    checked_out: "bg-gray-100 text-gray-600",
+    cancelled: "bg-red-100 text-red-700",
+  };
+  return (
+    <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${styles[status] || "bg-gray-100 text-gray-600"}`}>
+      {status || "-"}
+    </span>
+  );
+}
 
 export default function Reservations() {
+  const { formatMoney, formatDateTime } = useSettings();
+  const { addToast } = useToast();
+
   const [rooms, setRooms] = useState([]);
   const [reservations, setReservations] = useState([]);
-
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-
-  const { formatMoney, formatDateTime } = useSettings();
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isWalkIn, setIsWalkIn] = useState(false);
+  const { t } = useLanguage();
 
   const [form, setForm] = useState({
-    roomId: "",
-    guestName: "",
-    guestPhone: "",
-    scheduledCheckIn: "",
-    scheduledCheckOut: "",
-    adults: 1,
-    children: 0,
-    extraBeds: 0
+    roomId: "", guestName: "", guestPhone: "",
+    guestType: "local", nrc: "", passport: "",
+    scheduledCheckIn: "", scheduledCheckOut: "",
+    adults: 1, children: 0, extraBeds: 0
   });
 
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherMessage, setVoucherMessage] = useState("");
 
-  const loadRooms = async () => {
+  const loadData = async () => {
     try {
-      const response = await api.get("/rooms?active=true");
-
-      setRooms(response.data);
-    } catch (err) {
-      console.error(err);
+      const [roomsRes, reservationsRes] = await Promise.all([
+        api.get("/rooms?active=true"),
+        api.get("/reservations")
+      ]);
+      setRooms(roomsRes.data.filter(r => r.status === "available"));
+      setReservations(reservationsRes.data);
+    } catch (error) {
+      addToast("Failed to load data", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const loadReservations = async () => {
-    try {
-      const response = await api.get("/reservations");
+  useEffect(() => { loadData(); }, []);
 
-      setReservations(response.data);
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Failed to load reservations"
-      );
-    }
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  useEffect(() => {
-    loadRooms();
-    loadReservations();
-  }, []);
-
-  const handleChange = (e) => {
+  const resetForm = () => {
     setForm({
-      ...form,
-      [e.target.name]: e.target.value
+      roomId: "", guestName: "", guestPhone: "",
+      guestType: "local", nrc: "", passport: "",
+      scheduledCheckIn: "", scheduledCheckOut: "",
+      adults: 1, children: 0, extraBeds: 0
     });
+    setVoucherCode("");
+    setAppliedVoucher(null);
+    setVoucherMessage("");
+    setIsWalkIn(false);
   };
+
+  const openNewReservation = () => {
+    resetForm();
+    setIsWalkIn(false);
+    setIsModalOpen(true);
+  };
+
+  const openWalkIn = () => {
+    resetForm();
+    setIsWalkIn(true);
+    const now = new Date();
+    const localISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    setForm(prev => ({ ...prev, scheduledCheckIn: localISO }));
+    setIsModalOpen(true);
+  };
+
+  const selectedRoom = rooms.find(r => r._id === form.roomId);
+  const totalGuests = Number(form.adults || 0) + Number(form.children || 0);
 
   const calculateSubtotal = () => {
-    const room = rooms.find((item) => item._id === form.roomId);
-
-    if (!room || !form.scheduledCheckIn || !form.scheduledCheckOut) {
-      return 0;
-    }
-
-    const checkIn = new Date(form.scheduledCheckIn);
-    const checkOut = new Date(form.scheduledCheckOut);
-
-    const nights = Math.max(
-      1,
-      Math.ceil((checkOut - checkIn) / (24 * 60 * 60 * 1000))
-    );
-
-    const roomCharge = nights * Number(room.basePrice || 0);
-
-    const extraBedCharge =
-      Number(form.extraBeds || 0) *
-      nights *
-      Number(room.extraBedPrice || 0);
-
-    return roomCharge + extraBedCharge;
+    const room = rooms.find(r => r._id === form.roomId);
+    if (!room || !form.scheduledCheckIn || !form.scheduledCheckOut) return 0;
+    const nights = Math.max(1, Math.ceil((new Date(form.scheduledCheckOut) - new Date(form.scheduledCheckIn)) / 86400000));
+    return (nights * Number(room.basePrice || 0)) + (Number(form.extraBeds || 0) * nights * Number(room.extraBedPrice || 0));
   };
 
   const validateVoucher = async () => {
     try {
-      setMessage("");
-      setError("");
-      setVoucherMessage("");
-
       const subtotal = calculateSubtotal();
-
-      if (subtotal <= 0) {
-        setVoucherMessage("Select room and dates first.");
-        return;
-      }
-
-      const response = await api.post("/vouchers/validate", {
-        code: voucherCode,
-        subtotal
-      });
-
-      setAppliedVoucher(response.data);
-
-      setVoucherMessage(
-        `Applied: -${formatMoney(response.data.discount)}`
-      );
+      if (subtotal <= 0) { setVoucherMessage("Select room and dates first."); return; }
+      const res = await api.post("/vouchers/validate", { code: voucherCode, subtotal });
+      setAppliedVoucher(res.data);
+      setVoucherMessage(`Discount: -${formatMoney(res.data.discount)}`);
     } catch (err) {
       setAppliedVoucher(null);
-
-      setVoucherMessage(
-        err.response?.data?.message || "Invalid voucher code"
-      );
+      setVoucherMessage(err.response?.data?.message || "Invalid voucher");
     }
   };
 
   const createReservation = async (e) => {
     e.preventDefault();
-
     try {
-      setMessage("");
-      setError("");
-
-      if (!form.roomId || !form.scheduledCheckIn || !form.scheduledCheckOut) {
-        setError("Please select room, check-in and check-out");
-        return;
-      }
-
       const payload = {
         roomId: form.roomId,
         guest: {
           name: form.guestName,
-          phone: form.guestPhone
+          phone: form.guestPhone,
+          guestType: form.guestType,
+          nrc: form.guestType === "local" ? form.nrc : "",
+          passport: form.guestType === "foreigner" ? form.passport : "",
         },
         scheduledCheckIn: new Date(form.scheduledCheckIn).toISOString(),
         scheduledCheckOut: new Date(form.scheduledCheckOut).toISOString(),
         adults: Number(form.adults || 1),
         children: Number(form.children || 0),
         extraBeds: Number(form.extraBeds || 0),
-        voucherId: appliedVoucher?.voucherId || null
+        voucherId: appliedVoucher?.voucherId || null,
+        source: isWalkIn ? "walk_in" : "reception",
       };
 
-      await api.post("/reservations", payload);
+      const res = await api.post("/reservations", payload);
 
-      setMessage("Reservation created successfully");
+      if (isWalkIn && res.data?._id) {
+        await api.post(`/reservations/${res.data._id}/check-in`);
+        addToast("Walk-in guest checked in successfully");
+      } else {
+        addToast("Reservation created successfully");
+      }
 
-      setForm({
-        roomId: "",
-        guestName: "",
-        guestPhone: "",
-        scheduledCheckIn: "",
-        scheduledCheckOut: "",
-        adults: 1,
-        children: 0,
-        extraBeds: 0
-      });
-
-      setVoucherCode("");
-      setAppliedVoucher(null);
-      setVoucherMessage("");
-
-      loadReservations();
+      setIsModalOpen(false);
+      resetForm();
+      loadData();
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Failed to create reservation"
-      );
+      addToast(err.response?.data?.message || "Failed to create reservation", "error");
     }
   };
 
-  const checkIn = async (id) => {
-    try {
-      await api.post(`/reservations/${id}/check-in`);
+  const checkIn = async (id) => { try { await api.post(`/reservations/${id}/check-in`); addToast("Checked in"); loadData(); } catch (e) { addToast(e.response?.data?.message || "Check-in failed", "error"); } };
+  const checkOut = async (id) => { try { await api.post(`/reservations/${id}/check-out`); addToast("Checked out"); loadData(); } catch (e) { addToast(e.response?.data?.message || "Check-out failed", "error"); } };
+  const cancel = async (id) => { try { await api.post(`/reservations/${id}/cancel`, {}); addToast("Cancelled"); loadData(); } catch (e) { addToast(e.response?.data?.message || "Cancel failed", "error"); } };
 
-      setMessage("Checked in successfully");
-
-      loadReservations();
-    } catch (err) {
-      setError(err.response?.data?.message || "Check-in failed");
-    }
-  };
-
-  const checkOut = async (id) => {
-    try {
-      await api.post(`/reservations/${id}/check-out`);
-
-      setMessage("Checked out successfully");
-
-      loadReservations();
-    } catch (err) {
-      setError(err.response?.data?.message || "Check-out failed");
-    }
-  };
-
-  const cancelReservation = async (id) => {
-    try {
-      await api.post(`/reservations/${id}/cancel`, {});
-
-      setMessage("Reservation cancelled");
-
-      loadReservations();
-    } catch (err) {
-      setError(err.response?.data?.message || "Cancel failed");
-    }
-  };
-
-  const columns = [
-    {
-      key: "bookingNo",
-      label: "Booking"
-    },
-    {
-      key: "room",
-      label: "Room",
-      render: (row) => row.roomId?.roomNumber || "-"
-    },
-    {
-      key: "guest",
-      label: "Guest",
-      render: (row) => row.guest?.name || "-"
-    },
-    {
-      key: "scheduledCheckIn",
-      label: "Check In",
-      render: (row) => formatDateTime(row.scheduledCheckIn)
-    },
-    {
-      key: "scheduledCheckOut",
-      label: "Check Out",
-      render: (row) => formatDateTime(row.scheduledCheckOut)
-    },
-    {
-      key: "voucher",
-      label: "Voucher",
-      render: (row) => row.voucherCode || "-"
-    },
-    {
-      key: "total",
-      label: "Total",
-      render: (row) => formatMoney(row.priceSnapshot?.total)
-    },
-    {
-      key: "status",
-      label: "Status"
-    },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (row) => (
-        <div className="action-stack">
-          {row.status === "reserved" ? (
-            <>
-              <button
-                className="btn btn-primary"
-                onClick={() => checkIn(row._id)}
-              >
-                Check In
-              </button>
-
-              <button
-                className="btn btn-danger"
-                onClick={() => cancelReservation(row._id)}
-              >
-                Cancel
-              </button>
-            </>
-          ) : null}
-
-          {row.status === "checked_in" ? (
-            <button
-              className="btn btn-success"
-              onClick={() => checkOut(row._id)}
-            >
-              Check Out
-            </button>
-          ) : null}
-        </div>
-      )
-    }
-  ];
+  const filtered = reservations.filter(r =>
+    (r.bookingNo || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (r.guest?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (r.roomId?.roomNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (r.guest?.nrc || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (r.guest?.passport || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="page">
-      <div className="page-card">
-        <div className="page-header">
-          <div>
-            <h2 className="page-title">Create Reservation</h2>
-
-            <div className="page-subtitle">
-              Book a room for a guest.
-            </div>
-          </div>
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t("reservationsTitle")}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t("reservationsSubtitle")}</p>
         </div>
+        <div className="flex gap-3">
+          <button onClick={openWalkIn} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all active:scale-95">
+            <UserPlus className="w-5 h-5" /> {t("walkIn")}
+          </button>
+          <button onClick={openNewReservation} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all active:scale-95">
+            <Plus className="w-5 h-5" /> {t("newReservation")}
+          </button>
+        </div>
+      </div>
 
-        {message ? <div className="alert alert-success">{message}</div> : null}
-        {error ? <div className="alert alert-error">{error}</div> : null}
+      <div className="relative max-w-md">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input type="text" placeholder="Search booking, guest, room, NRC, passport..." className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      </div>
 
-        <form onSubmit={createReservation} className="form-grid">
-          <div className="form-field">
-            <label>Room</label>
-
-            <select
-              name="roomId"
-              value={form.roomId}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select room</option>
-
-              {rooms.map((room) => (
-                <option key={room._id} value={room._id}>
-                  {room.roomNumber} - {room.roomType} -{" "}
-                  {formatMoney(room.basePrice)}/night
-                </option>
-              ))}
-            </select>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-20 text-gray-500"><Loader2 className="w-8 h-8 animate-spin mr-3" /> Loading...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead><tr className="bg-gray-50/50 border-b border-gray-100">
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("booking")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("room")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("guest")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("idLabel")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase hidden lg:table-cell">{t("checkIn")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase hidden lg:table-cell">{t("checkOut")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("total")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("status")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">{t("actions")}</th>
+              </tr></thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map((r) => (
+                  <tr key={r._id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-sm">
+                      <div className="flex items-center gap-2">
+                        {r.bookingNo}
+                        {r.source === "walk_in" && <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-bold">WALK-IN</span>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{r.roomId?.roomNumber || "-"}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{r.guest?.name || "-"}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {r.guest?.guestType === "foreigner"
+                        ? <span className="text-blue-600">{r.guest?.passport || "-"}</span>
+                        : <span>{r.guest?.nrc || "-"}</span>
+                      }
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">{formatDateTime(r.scheduledCheckIn)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">{formatDateTime(r.scheduledCheckOut)}</td>
+                    <td className="px-6 py-4 text-sm font-semibold">{formatMoney(r.priceSnapshot?.total)}</td>
+                    <td className="px-6 py-4"><StatusBadge status={r.status} /></td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {r.status === "reserved" && (
+                          <>
+                            <button onClick={() => checkIn(r._id)} className="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" title="Check In"><LogIn className="w-4 h-4" /></button>
+                            <button onClick={() => cancel(r._id)} className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Cancel"><XCircle className="w-4 h-4" /></button>
+                          </>
+                        )}
+                        {r.status === "checked_in" && (
+                          <button onClick={() => checkOut(r._id)} className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Check Out"><LogOut className="w-4 h-4" /></button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filtered.length === 0 && <div className="text-center py-16 text-gray-400">No reservations found.</div>}
           </div>
+        )}
+      </div>
 
-          <div className="form-field">
-            <label>Guest Name</label>
+      {/* Create Reservation / Walk-In Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); resetForm(); }} title={isWalkIn ? "Walk-In Guest" : "New Reservation"} size="lg">
+        <form onSubmit={createReservation} className="space-y-5">
+          {isWalkIn && (
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
+              {t("walkInMode")}
+            </div>
+          )}
 
-            <input
-              name="guestName"
-              placeholder="Guest name"
-              value={form.guestName}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form-field">
-            <label>Guest Phone</label>
-
-            <input
-              name="guestPhone"
-              placeholder="Guest phone"
-              value={form.guestPhone}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form-field">
-            <label>Check In</label>
-
-            <input
-              type="datetime-local"
-              name="scheduledCheckIn"
-              value={form.scheduledCheckIn}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-field">
-            <label>Check Out</label>
-
-            <input
-              type="datetime-local"
-              name="scheduledCheckOut"
-              value={form.scheduledCheckOut}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-field">
-            <label>Adults</label>
-
-            <input
-              type="number"
-              name="adults"
-              value={form.adults}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form-field">
-            <label>Children</label>
-
-            <input
-              type="number"
-              name="children"
-              value={form.children}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form-field">
-            <label>Extra Beds</label>
-
-            <input
-              type="number"
-              name="extraBeds"
-              value={form.extraBeds}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form-field field-full">
-            <label>Voucher Code</label>
-
-            <div className="action-stack">
-              <input
-                value={voucherCode}
-                onChange={(e) => {
-                  setVoucherCode(e.target.value.toUpperCase());
-                  setAppliedVoucher(null);
-                  setVoucherMessage("");
-                }}
-                placeholder="Enter voucher code"
-              />
-
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={validateVoucher}
-              >
-                Apply
-              </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="sm:col-span-2">
+              <label className="label-primary">Room</label>
+              <select name="roomId" value={form.roomId} onChange={handleChange} required className="input-primary">
+                <option value="">Select room</option>
+                {rooms.map(r => (
+                  <option key={r._id} value={r._id}>
+                    {r.roomNumber} - {r.roomType} ({r.maxGuests || 2} guests) - {formatMoney(r.basePrice)}/night
+                  </option>
+                ))}
+              </select>
+              {selectedRoom && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Capacity: {selectedRoom.maxGuests || 2} guests max
+                </p>
+              )}
             </div>
 
-            {voucherMessage ? (
-              <div
-                className={
-                  voucherMessage.includes("Applied")
-                    ? "alert alert-success"
-                    : "alert alert-error"
-                }
-              >
-                {voucherMessage}
+            <div><label className="label-primary">{t("guestName")}</label><input name="guestName" value={form.guestName} onChange={handleChange} className="input-primary" required /></div>
+            <div><label className="label-primary">{t("guestPhone")}</label><input name="guestPhone" value={form.guestPhone} onChange={handleChange} className="input-primary" /></div>
+
+            <div className="sm:col-span-2">
+              <label className="label-primary">{t("guestType")}</label>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setForm({ ...form, guestType: "local" })} className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all ${form.guestType === "local" ? "bg-indigo-50 border-indigo-300 text-indigo-700" : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"}`}>
+                  {t("local")}
+                </button>
+                <button type="button" onClick={() => setForm({ ...form, guestType: "foreigner" })} className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all ${form.guestType === "foreigner" ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"}`}>
+                  {t("foreigner")}
+                </button>
               </div>
-            ) : null}
+            </div>
+
+            {form.guestType === "local" ? (
+              <div className="sm:col-span-2"><label className="label-primary">{t("nrc")}</label><input name="nrc" value={form.nrc} onChange={handleChange} className="input-primary" placeholder="e.g. 12/YGN(N)123456" /></div>
+            ) : (
+              <div className="sm:col-span-2"><label className="label-primary">{t("passport")}</label><input name="passport" value={form.passport} onChange={handleChange} className="input-primary" placeholder="e.g. MA123456" /></div>
+            )}
+
+            <div>
+              <label className="label-primary">{t("checkIn")}</label>
+              <input type="datetime-local" name="scheduledCheckIn" value={form.scheduledCheckIn} onChange={handleChange} required className="input-primary" disabled={isWalkIn} />
+              {isWalkIn && <p className="text-xs text-gray-400 mt-1">Walk-in: check-in is set to now</p>}
+            </div>
+            <div><label className="label-primary">{t("checkOut")}</label><input type="datetime-local" name="scheduledCheckOut" value={form.scheduledCheckOut} onChange={handleChange} required className="input-primary" /></div>
+
+            <div><label className="label-primary">{t("adults")}</label><input type="number" name="adults" value={form.adults} onChange={handleChange} className="input-primary" /></div>
+            <div><label className="label-primary">{t("children")}</label><input type="number" name="children" value={form.children} onChange={handleChange} className="input-primary" /></div>
+            <div><label className="label-primary">{t("extraBeds")}</label><input type="number" name="extraBeds" value={form.extraBeds} onChange={handleChange} className="input-primary" /></div>
+
+            {selectedRoom && totalGuests > (selectedRoom?.maxGuests || 2) && (
+              <div className="sm:col-span-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium">
+                Warning: Total guests ({totalGuests}) exceeds room capacity ({selectedRoom?.maxGuests || 2}). You can still proceed, but consider a larger room.
+              </div>
+            )}
+
+            <div>
+              <label className="label-primary">{t("voucherCode")}</label>
+              <div className="flex gap-2">
+                <input value={voucherCode} onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setAppliedVoucher(null); setVoucherMessage(""); }} className="input-primary" placeholder="Enter code" />
+                <button type="button" onClick={validateVoucher} className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors whitespace-nowrap"><Ticket className="w-4 h-4" /></button>
+              </div>
+              {voucherMessage && <p className={`text-xs mt-2 font-medium ${appliedVoucher ? "text-emerald-600" : "text-red-500"}`}>{voucherMessage}</p>}
+            </div>
           </div>
 
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              Create Reservation
+          <div className="flex gap-4 pt-4">
+            <button type="button" onClick={() => { setIsModalOpen(false); resetForm(); }} className="flex-1 px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors">Cancel</button>
+            <button type="submit" className={`flex-1 px-6 py-3 rounded-xl text-white font-semibold shadow-lg transition-all ${isWalkIn ? "bg-emerald-600 shadow-emerald-600/20 hover:bg-emerald-700" : "bg-indigo-600 shadow-indigo-600/20 hover:bg-indigo-700"}`}>
+              {isWalkIn ? t("checkInWalkInGuest") : t("createReservationBtn")}
             </button>
           </div>
         </form>
-      </div>
-
-      <div className="page-card">
-        <div className="page-header">
-          <div>
-            <h2 className="page-title">Reservations</h2>
-
-            <div className="page-subtitle">
-              Manage bookings, check-in and check-out.
-            </div>
-          </div>
-        </div>
-
-        <ResponsiveTable
-          columns={columns}
-          data={reservations}
-          emptyMessage="No reservations found."
-        />
-      </div>
+      </Modal>
     </div>
   );
 }

@@ -1,348 +1,102 @@
 import { useEffect, useState } from "react";
-
 import api from "../api";
-
-import ResponsiveTable from "../components/ResponsiveTable.jsx";
-
-const formatDateTime = (value) => {
-  if (!value) return "-";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleString();
-};
+import { useSettings } from "../SettingsContext";
+import { useToast } from "../components/ToastContext";
+import Modal from "../components/Modal";
+import { Plus, Loader2, Play, CheckCircle, XCircle } from "lucide-react";
+import { useLanguage } from "../LanguageContext";
 
 export default function Housekeeping() {
+  const { formatDateTime } = useSettings();
+  const { addToast } = useToast();
   const [tasks, setTasks] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [users, setUsers] = useState([]);
-
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState({ roomId: "", type: "cleaning", priority: "normal", assignedTo: "", notes: "" });
+  const { t } = useLanguage();
 
-  const [form, setForm] = useState({
-    roomId: "",
-    type: "cleaning",
-    priority: "normal",
-    assignedTo: "",
-    notes: ""
-  });
-
-  const loadTasks = async () => {
+  const loadAll = async () => {
     try {
-      const response = await api.get("/housekeeping/tasks");
-
-      setTasks(response.data);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to load tasks");
-    }
+      const [t, r, u] = await Promise.all([api.get("/housekeeping/tasks"), api.get("/rooms?active=true"), api.get("/users").catch(() => ({ data: [] }))]);
+      setTasks(t.data); setRooms(r.data); setUsers(u.data);
+    } catch { addToast("Failed to load data", "error"); } finally { setLoading(false); }
   };
 
-  const loadRooms = async () => {
-    try {
-      const response = await api.get("/rooms?active=true");
-
-      setRooms(response.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const loadUsers = async () => {
-    try {
-      const response = await api.get("/users");
-
-      setUsers(response.data);
-    } catch (err) {
-      setUsers([]);
-    }
-  };
-
-  useEffect(() => {
-    const loadAll = async () => {
-      setLoading(true);
-
-      await Promise.all([loadTasks(), loadRooms(), loadUsers()]);
-
-      setLoading(false);
-    };
-
-    loadAll();
-  }, []);
-
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
-  };
+  useEffect(() => { loadAll(); }, []);
 
   const createTask = async (e) => {
     e.preventDefault();
-
-    try {
-      setMessage("");
-      setError("");
-
-      const payload = {
-        roomId: form.roomId,
-        type: form.type,
-        priority: form.priority,
-        assignedTo: form.assignedTo || undefined,
-        notes: form.notes
-      };
-
-      await api.post("/housekeeping/tasks", payload);
-
-      setMessage("Task created successfully");
-
-      setForm({
-        roomId: "",
-        type: "cleaning",
-        priority: "normal",
-        assignedTo: "",
-        notes: ""
-      });
-
-      loadTasks();
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to create task");
-    }
+    try { await api.post("/housekeeping/tasks", { ...form, assignedTo: form.assignedTo || undefined }); addToast("Task created"); setIsModalOpen(false); setForm({ roomId: "", type: "cleaning", priority: "normal", assignedTo: "", notes: "" }); loadAll(); } catch (err) { addToast(err.response?.data?.message || "Failed", "error"); }
   };
 
-  const startTask = async (id) => {
-    try {
-      await api.post(`/housekeeping/tasks/${id}/start`);
+  const startTask = async (id) => { try { await api.post(`/housekeeping/tasks/${id}/start`); loadAll(); } catch (e) { addToast(e.response?.data?.message || "Failed", "error"); } };
+  const completeTask = async (id) => { try { await api.post(`/housekeeping/tasks/${id}/complete`); addToast("Task completed"); loadAll(); } catch (e) { addToast(e.response?.data?.message || "Failed", "error"); } };
+  const cancelTask = async (id) => { try { await api.post(`/housekeeping/tasks/${id}/cancel`); loadAll(); } catch (e) { addToast(e.response?.data?.message || "Failed", "error"); } };
 
-      loadTasks();
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to start task");
-    }
-  };
-
-  const completeTask = async (id) => {
-    try {
-      await api.post(`/housekeeping/tasks/${id}/complete`);
-
-      loadTasks();
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to complete task");
-    }
-  };
-
-  const cancelTask = async (id) => {
-    try {
-      await api.post(`/housekeeping/tasks/${id}/cancel`);
-
-      loadTasks();
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to cancel task");
-    }
-  };
-
-  const columns = [
-    {
-      key: "room",
-      label: "Room",
-      render: (row) => row.roomId?.roomNumber || "-"
-    },
-    {
-      key: "type",
-      label: "Type"
-    },
-    {
-      key: "priority",
-      label: "Priority"
-    },
-    {
-      key: "status",
-      label: "Status"
-    },
-    {
-      key: "assignedTo",
-      label: "Assigned To",
-      render: (row) => row.assignedTo?.name || "Unassigned"
-    },
-    {
-      key: "createdAt",
-      label: "Created",
-      render: (row) => formatDateTime(row.createdAt)
-    },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (row) => (
-        <div className="action-stack">
-          {row.status === "pending" ? (
-            <>
-              <button
-                className="btn btn-primary"
-                onClick={() => startTask(row._id)}
-              >
-                Start
-              </button>
-
-              <button
-                className="btn btn-danger"
-                onClick={() => cancelTask(row._id)}
-              >
-                Cancel
-              </button>
-            </>
-          ) : null}
-
-          {row.status === "in_progress" ? (
-            <>
-              <button
-                className="btn btn-success"
-                onClick={() => completeTask(row._id)}
-              >
-                Complete
-              </button>
-
-              <button
-                className="btn btn-danger"
-                onClick={() => cancelTask(row._id)}
-              >
-                Cancel
-              </button>
-            </>
-          ) : null}
-        </div>
-      )
-    }
-  ];
+  const priorityColors = { low: "bg-gray-100 text-gray-600", normal: "bg-blue-100 text-blue-700", high: "bg-amber-100 text-amber-700", urgent: "bg-red-100 text-red-700" };
+  const statusColors = { pending: "bg-amber-100 text-amber-700", in_progress: "bg-blue-100 text-blue-700", completed: "bg-emerald-100 text-emerald-700", cancelled: "bg-gray-100 text-gray-500" };
 
   return (
-    <div className="page">
-      <div className="page-card">
-        <div className="page-header">
-          <div>
-            <h2 className="page-title">Create Housekeeping Task</h2>
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div><h1 className="text-2xl font-bold text-gray-900">{t("housekeepingTitle")}</h1><p className="text-gray-500 text-sm mt-1">{t("housekeepingSubtitle")}</p></div>
+        <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all active:scale-95"><Plus className="w-5 h-5" /> {t("newTask")}</button>
+      </div>
 
-            <div className="page-subtitle">
-              Assign cleaning or maintenance work.
-            </div>
-          </div>
-        </div>
-
-        {message ? <div className="alert alert-success">{message}</div> : null}
-        {error ? <div className="alert alert-error">{error}</div> : null}
-
-        <form onSubmit={createTask} className="form-grid">
-          <div className="form-field">
-            <label>Room</label>
-
-            <select
-              name="roomId"
-              value={form.roomId}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select room</option>
-
-              {rooms.map((room) => (
-                <option key={room._id} value={room._id}>
-                  {room.roomNumber} - {room.roomType} - {room.status}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-field">
-            <label>Type</label>
-
-            <select
-              name="type"
-              value={form.type}
-              onChange={handleChange}
-            >
-              <option value="cleaning">Cleaning</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="inspection">Inspection</option>
-            </select>
-          </div>
-
-          <div className="form-field">
-            <label>Priority</label>
-
-            <select
-              name="priority"
-              value={form.priority}
-              onChange={handleChange}
-            >
-              <option value="low">Low</option>
-              <option value="normal">Normal</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </div>
-
-          {users.length > 0 ? (
-            <div className="form-field">
-              <label>Assigned To</label>
-
-              <select
-                name="assignedTo"
-                value={form.assignedTo}
-                onChange={handleChange}
-              >
-                <option value="">Unassigned</option>
-
-                {users.map((user) => (
-                  <option key={user._id} value={user._id}>
-                    {user.name} - {user.role}
-                  </option>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {loading ? <div className="flex items-center justify-center py-20 text-gray-500"><Loader2 className="w-8 h-8 animate-spin mr-3" /> Loading...</div> : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead><tr className="bg-gray-50/50 border-b border-gray-100">
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("room")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("type")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("priority")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("status")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase hidden md:table-cell">{t("assigned")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase hidden lg:table-cell">{t("created")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">{t("actions")}</th>
+              </tr></thead>
+              <tbody className="divide-y divide-gray-50">
+                {tasks.map((t) => (
+                  <tr key={t._id} className="hover:bg-gray-50/50">
+                    <td className="px-6 py-4 font-bold text-sm">{t.roomId?.roomNumber || "-"}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 capitalize">{t.type}</td>
+                    <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${priorityColors[t.priority]}`}>{t.priority}</span></td>
+                    <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${statusColors[t.status]}`}>{t.status}</span></td>
+                    <td className="px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{t.assignedTo?.name || "Unassigned"}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">{formatDateTime(t.createdAt)}</td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {t.status === "pending" && <><button onClick={() => startTask(t._id)} className="p-2 rounded-lg text-blue-600 hover:bg-blue-50"><Play className="w-4 h-4" /></button><button onClick={() => cancelTask(t._id)} className="p-2 rounded-lg text-red-500 hover:bg-red-50"><XCircle className="w-4 h-4" /></button></>}
+                        {t.status === "in_progress" && <><button onClick={() => completeTask(t._id)} className="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50"><CheckCircle className="w-4 h-4" /></button><button onClick={() => cancelTask(t._id)} className="p-2 rounded-lg text-red-500 hover:bg-red-50"><XCircle className="w-4 h-4" /></button></>}
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-              </select>
-            </div>
-          ) : null}
-
-          <div className="form-field field-full">
-            <label>Notes</label>
-
-            <input
-              name="notes"
-              placeholder="Task notes"
-              value={form.notes}
-              onChange={handleChange}
-            />
+              </tbody>
+            </table>
+            {tasks.length === 0 && <div className="text-center py-16 text-gray-400">No tasks found.</div>}
           </div>
+        )}
+      </div>
 
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              Create Task
-            </button>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create Task">
+        <form onSubmit={createTask} className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div><label className="label-primary">{t("room")}</label><select name="roomId" value={form.roomId} onChange={(e) => setForm({ ...form, roomId: e.target.value })} required className="input-primary"><option value="">{t("selectRoom")}</option>{rooms.map(r => <option key={r._id} value={r._id}>{r.roomNumber} - {r.roomType}</option>)}</select></div>
+            <div><label className="label-primary">{t("type")}</label><select name="type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="input-primary"><option value="cleaning">{t("cleaning")}</option><option value="maintenance">{t("maintenance")}</option><option value="inspection">{t("inspection")}</option></select></div>
+            <div><label className="label-primary">{t("priority")}</label><select name="priority" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="input-primary"><option value="low">Low</option><option value="normal">{t("normal")}</option><option value="high">{t("high")}</option><option value="urgent">{t("urgent")}</option></select></div>
+            {users.length > 0 && <div><label className="label-primary">{t("assignTo")}</label><select name="assignedTo" value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })} className="input-primary"><option value="">{t("unassigned")}</option>{users.map(u => <option key={u._id} value={u._id}>{u.name}</option>)}</select></div>}
+            <div className="sm:col-span-2"><label className="label-primary">{t("notes")}</label><input name="notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="input-primary" /></div>
+          </div>
+          <div className="flex gap-4 pt-4">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50">{t("cancel")}</button>
+            <button type="submit" className="flex-1 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">{t("newTask")}</button>
           </div>
         </form>
-      </div>
-
-      <div className="page-card">
-        <div className="page-header">
-          <div>
-            <h2 className="page-title">Housekeeping Tasks</h2>
-
-            <div className="page-subtitle">
-              Start, complete or cancel tasks.
-            </div>
-          </div>
-        </div>
-
-        {loading ? <div>Loading tasks...</div> : null}
-
-        {!loading ? (
-          <ResponsiveTable
-            columns={columns}
-            data={tasks}
-            emptyMessage="No housekeeping tasks found."
-          />
-        ) : null}
-      </div>
+      </Modal>
     </div>
   );
 }
