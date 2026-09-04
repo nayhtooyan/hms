@@ -4,6 +4,7 @@ import { LanguageProvider } from "./LanguageContext";
 import { SettingsProvider } from "./SettingsContext";
 import { ToastProvider } from "./components/ToastContext"; // Import Toast
 
+
 import AppLayout from "./components/AppLayout.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";

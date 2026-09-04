@@ -4,6 +4,7 @@ import { useSettings } from "../SettingsContext";
 import { useToast } from "../components/ToastContext";
 import Modal from "../components/Modal";
 import { Plus, Search, Loader2, Trash2, Ticket } from "lucide-react";
+import { useLanguage } from "../LanguageContext";
 
 export default function Vouchers() {
   const { formatMoney, formatDate } = useSettings();
@@ -12,6 +13,7 @@ export default function Vouchers() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { t } = useLanguage();
 
   const [form, setForm] = useState({ code: "", type: "fixed", value: "", maxDiscount: "", usageLimit: "1", validFrom: "", validTo: "" });
 
@@ -47,24 +49,24 @@ export default function Vouchers() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div><h1 className="text-2xl font-bold text-gray-900">Vouchers</h1><p className="text-gray-500 text-sm mt-1">Manage discount codes.</p></div>
-        <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all active:scale-95"><Plus className="w-5 h-5" /> New Voucher</button>
+        <div><h1 className="text-2xl font-bold text-gray-900">{t("vouchersTitle")}</h1><p className="text-gray-500 text-sm mt-1">{t("vouchersSubtitle")}</p></div>
+        <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all active:scale-95"><Plus className="w-5 h-5" /> {t("newVoucher")}</button>
       </div>
 
-      <div className="relative max-w-md"><Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" placeholder="Search by code..." className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
+      <div className="relative max-w-md"><Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" placeholder={t("voucherSearchPlaceholder")} className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? <div className="flex items-center justify-center py-20 text-gray-500"><Loader2 className="w-8 h-8 animate-spin mr-3" /> Loading...</div> : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead><tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Code</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Type</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Value</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Usage</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase hidden md:table-cell">Valid To</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("code")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("type")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("value")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("usage")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase hidden md:table-cell">{t("validTo")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t("status")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">{t("actions")}</th>
               </tr></thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((v) => (
@@ -85,20 +87,20 @@ export default function Vouchers() {
         )}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create Voucher">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={t('createVoucherBtn')}>
         <form onSubmit={createVoucher} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div><label className="label-primary">Code</label><input name="code" value={form.code} onChange={handleChange} required className="input-primary" placeholder="WELCOME50" /></div>
-            <div><label className="label-primary">Type</label><select name="type" value={form.type} onChange={handleChange} className="input-primary"><option value="fixed">Fixed Amount</option><option value="percentage">Percentage</option></select></div>
-            <div><label className="label-primary">Value</label><input type="number" name="value" value={form.value} onChange={handleChange} required className="input-primary" /></div>
-            <div><label className="label-primary">Max Discount</label><input type="number" name="maxDiscount" value={form.maxDiscount} onChange={handleChange} className="input-primary" /></div>
-            <div><label className="label-primary">Usage Limit</label><input type="number" name="usageLimit" value={form.usageLimit} onChange={handleChange} className="input-primary" /></div>
-            <div><label className="label-primary">Valid From</label><input type="date" name="validFrom" value={form.validFrom} onChange={handleChange} required className="input-primary" /></div>
-            <div><label className="label-primary">Valid To</label><input type="date" name="validTo" value={form.validTo} onChange={handleChange} required className="input-primary" /></div>
+            <div><label className="label-primary">{t("code")}</label><input name="code" value={form.code} onChange={handleChange} required className="input-primary" placeholder="WELCOME50" /></div>
+            <div><label className="label-primary">{t("type")}</label><select name="type" value={form.type} onChange={handleChange} className="input-primary"><option value="fixed">{t("fixedAmount")}</option><option value="percentage">{t("percentage")}</option></select></div>
+            <div><label className="label-primary">{t("value")}</label><input type="number" name="value" value={form.value} onChange={handleChange} required className="input-primary" /></div>
+            <div><label className="label-primary">{t("maxDiscount")}</label><input type="number" name="maxDiscount" value={form.maxDiscount} onChange={handleChange} className="input-primary" /></div>
+            <div><label className="label-primary">{t("usageLimit")}</label><input type="number" name="usageLimit" value={form.usageLimit} onChange={handleChange} className="input-primary" /></div>
+            <div><label className="label-primary">{t("validFrom")}</label><input type="date" name="validFrom" value={form.validFrom} onChange={handleChange} required className="input-primary" /></div>
+            <div><label className="label-primary">{t("validTo")}</label><input type="date" name="validTo" value={form.validTo} onChange={handleChange} required className="input-primary" /></div>
           </div>
           <div className="flex gap-4 pt-4">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50">Cancel</button>
-            <button type="submit" className="flex-1 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">Create Voucher</button>
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50">{t("cancel")}</button>
+            <button type="submit" className="flex-1 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">{t("createVoucherBtn")}</button>
           </div>
         </form>
       </Modal>

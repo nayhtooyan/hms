@@ -128,10 +128,10 @@ export default function Dashboard() {
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard icon={DollarSign} label="Today Revenue" value={formatMoney(stats.todayRevenue)} color="emerald"  />
-        <KpiCard icon={TrendingUp} label="Monthly Revenue" value={formatMoney(stats.monthlyRevenue)} color="emerald" />
-        <KpiCard icon={ArrowUpRight} label="Arrivals Today" value={stats.todayArrivals || 0} color="blue" />
-        <KpiCard icon={ArrowDownRight} label="Departures Today" value={stats.todayDepartures || 0} color="amber" />
+        <KpiCard icon={DollarSign} label={t("todayRevenue")} value={formatMoney(stats.todayRevenue)} color="emerald"  />
+        <KpiCard icon={TrendingUp} label={t("monthlyRevenue")} value={formatMoney(stats.monthlyRevenue)} color="emerald" />
+        <KpiCard icon={ArrowUpRight} label={t("arrivalsToday")} value={stats.todayArrivals || 0} color="blue" />
+        <KpiCard icon={ArrowDownRight} label={t("departuresToday")} value={stats.todayDepartures || 0} color="amber" />
       </div>
 
       {/* Occupancy & Room Status */}
@@ -153,10 +153,10 @@ export default function Dashboard() {
           <h3 className="text-sm font-semibold text-gray-500 mb-4">{t("roomStatusOverview")}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
-              { label: "Available", value: stats.availableRooms, color: "emerald" },
-              { label: "Occupied", value: stats.occupiedRooms, color: "red" },
-              { label: "Reserved", value: stats.reservedRooms, color: "blue" },
-              { label: "Cleaning", value: stats.cleaningRooms, color: "amber" },
+              { label: t("available"), value: stats.availableRooms, color: "emerald" },
+              { label: t("occupied"), value: stats.occupiedRooms, color: "red" },
+              { label: t("reserved"), value: stats.reservedRooms, color: "blue" },
+              { label: t("cleaning"), value: stats.cleaningRooms, color: "amber" },
             ].map((item) => (
               <div key={item.label} className={`p-4 rounded-xl bg-${item.color}-50 text-center`}>
                 <p className={`text-2xl font-extrabold text-${item.color}-600`}>{item.value || 0}</p>
@@ -183,15 +183,15 @@ export default function Dashboard() {
             <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold">{arrivals.length}</span>
           </div>
           {arrivals.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">No arrivals today</div>
+            <div className="text-center py-12 text-gray-400 text-sm">{t("noArrivals")}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead><tr className="bg-gray-50/50">
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Booking</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Room</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Guest</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("booking")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("room")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("guest")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("status")}</th>
                 </tr></thead>
                 <tbody className="divide-y divide-gray-50">
                   {arrivals.map((row) => (
@@ -215,15 +215,15 @@ export default function Dashboard() {
             <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-xs font-bold">{departures.length}</span>
           </div>
           {departures.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">No departures today</div>
+            <div className="text-center py-12 text-gray-400 text-sm">{t("noDepartures")}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead><tr className="bg-gray-50/50">
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Booking</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Room</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Guest</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("booking")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("room")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("guest")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("status")}</th>
                 </tr></thead>
                 <tbody className="divide-y divide-gray-50">
                   {departures.map((row) => (
@@ -246,15 +246,15 @@ export default function Dashboard() {
             <h3 className="font-bold text-gray-800">{t("recentPayments")}</h3>
           </div>
           {recentPayments.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">No recent payments</div>
+            <div className="text-center py-12 text-gray-400 text-sm">{t("noRecentPayments")}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead><tr className="bg-gray-50/50">
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Receipt</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Room</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Method</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("receipt")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("room")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("method")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("amount")}</th>
                 </tr></thead>
                 <tbody className="divide-y divide-gray-50">
                   {recentPayments.map((row) => (
@@ -278,7 +278,7 @@ export default function Dashboard() {
             <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold">{roomsNeedingAttention.length}</span>
           </div>
           {roomsNeedingAttention.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">All rooms are okay</div>
+            <div className="text-center py-12 text-gray-400 text-sm">{t("allRoomsOkay")}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">

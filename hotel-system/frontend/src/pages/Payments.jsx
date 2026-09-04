@@ -68,7 +68,7 @@ export default function Payments() {
           <button onClick={() => setTab("balances")} className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === "balances" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}>{t("balances")}</button>
           <button onClick={() => setTab("history")} className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === "history" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}>{t("paymentHistory")}</button>
         </div>
-        <div className="relative flex-1 max-w-md"><Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" placeholder="Search..." className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
+        <div className="relative flex-1 max-w-md"><Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" placeholder={t("paymentSearchPlaceholder")} className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -133,18 +133,18 @@ export default function Payments() {
         )}
       </div>
 
-      <Modal isOpen={!!selectedReservation} onClose={() => setSelectedReservation(null)} title="Record Payment">
+      <Modal isOpen={!!selectedReservation} onClose={() => setSelectedReservation(null)} title={t("recordPayment")}>
         <form onSubmit={submitPayment} className="space-y-5">
-          <p className="text-sm text-gray-500">Booking: <strong>{selectedReservation?.bookingNo}</strong></p>
+          <p className="text-sm text-gray-500">{t("bookingNo")}: <strong>{selectedReservation?.bookingNo}</strong></p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div><label className="label-primary">Amount</label><input type="number" name="amount" value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} required className="input-primary" /></div>
-            <div><label className="label-primary">Method</label><select name="method" value={payForm.method} onChange={(e) => setPayForm({ ...payForm, method: e.target.value })} className="input-primary"><option value="cash">Cash</option><option value="card">Card</option><option value="bank_transfer">Bank Transfer</option><option value="other">Other</option></select></div>
-            <div><label className="label-primary">Reference</label><input name="reference" value={payForm.reference} onChange={(e) => setPayForm({ ...payForm, reference: e.target.value })} className="input-primary" /></div>
-            <div><label className="label-primary">Note</label><input name="note" value={payForm.note} onChange={(e) => setPayForm({ ...payForm, note: e.target.value })} className="input-primary" /></div>
+            <div><label className="label-primary">{t("amount")}</label><input type="number" name="amount" value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} required className="input-primary" /></div>
+            <div><label className="label-primary">{t("method")}</label><select name="method" value={payForm.method} onChange={(e) => setPayForm({ ...payForm, method: e.target.value })} className="input-primary"><option value="cash">{t("cash")}</option><option value="card">{t("card")}</option><option value="bank_transfer">{t("bankTransfer")}</option><option value="other">{t("other")}</option></select></div>
+            <div><label className="label-primary">{t("reference")}</label><input name="reference" value={payForm.reference} onChange={(e) => setPayForm({ ...payForm, reference: e.target.value })} className="input-primary" /></div>
+            <div><label className="label-primary">{t("note")}</label><input name="note" value={payForm.note} onChange={(e) => setPayForm({ ...payForm, note: e.target.value })} className="input-primary" /></div>
           </div>
           <div className="flex gap-4 pt-4">
-            <button type="button" onClick={() => setSelectedReservation(null)} className="flex-1 px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50">Cancel</button>
-            <button type="submit" className="flex-1 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">Save Payment</button>
+            <button type="button" onClick={() => setSelectedReservation(null)} className="flex-1 px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50">{t("cancel")}</button>
+            <button type="submit" className="flex-1 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">{t("savePaymentBtn")}</button>
           </div>
         </form>
       </Modal>

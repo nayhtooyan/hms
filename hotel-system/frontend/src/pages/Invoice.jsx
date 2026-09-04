@@ -30,7 +30,7 @@ export default function Invoice() {
   return (
     <div className="max-w-3xl mx-auto animate-fade-in">
       <div className="flex gap-3 mb-6 print:hidden">
-        <Link to="/payments" className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-sm"><ArrowLeft className="w-4 h-4" /> Back</Link>
+        <Link to="/payments" className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-sm"><ArrowLeft className="w-4 h-4" /> {t("back")}</Link>
         <button onClick={() => window.print()} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all"><Printer className="w-4 h-4" /> Print</button>
       </div>
 

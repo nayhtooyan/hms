@@ -49,6 +49,7 @@ export default function Rooms() {
     loadRooms();
   }, []);
 
+
   const handleOpenModal = (room = null) => {
     setEditingRoom(room);
     if (room) {
@@ -146,7 +147,7 @@ export default function Rooms() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
         <input
           type="text"
-          placeholder="Search by room number or type..."
+          placeholder={t("roomSearchPlaceholder")}
           className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -226,12 +227,12 @@ export default function Rooms() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingRoom ? "Edit Room" : "Add New Room"}
+        title={editingRoom ? t("editRoom") : t("addNewRoom")}
       >
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="label-primary">Room Number</label>
+              <label className="label-primary">{t("roomNumber")}</label>
               <input
                 type="text"
                 className="input-primary"
@@ -241,7 +242,7 @@ export default function Rooms() {
               />
             </div>
             <div>
-              <label className="label-primary">Room Type</label>
+              <label className="label-primary">{t("roomType")}</label>
               <select
                 name="roomType"
                 value={formData.roomType}
@@ -259,7 +260,7 @@ export default function Rooms() {
               </p>
             </div>
             <div>
-              <label className="label-primary">Max Guests (Capacity)</label>
+              <label className="label-primary">{t("maxGuests")}</label>
               <select
                 name="maxGuests"
                 value={formData.maxGuests}
@@ -277,7 +278,7 @@ export default function Rooms() {
               </select>
             </div>
             <div>
-              <label className="label-primary">Floor</label>
+              <label className="label-primary">{t("floor")}</label>
               <input
                 type="number"
                 className="input-primary"
@@ -286,7 +287,7 @@ export default function Rooms() {
               />
             </div>
             <div>
-              <label className="label-primary">Base Price ($)</label>
+              <label className="label-primary">{t("basePrice")}</label>
               <input
                 type="number"
                 className="input-primary"
@@ -296,7 +297,7 @@ export default function Rooms() {
               />
             </div>
             <div>
-              <label className="label-primary">Extra Bed Price</label>
+              <label className="label-primary">{t("extraBedPrice")}</label>
               <input
                 type="number"
                 className="input-primary"
@@ -305,7 +306,7 @@ export default function Rooms() {
               />
             </div>
             <div>
-              <label className="label-primary">Overtime Rate (Hr)</label>
+              <label className="label-primary">{t("overtimeRate")}</label>
               <input
                 type="number"
                 className="input-primary"
@@ -321,13 +322,13 @@ export default function Rooms() {
               onClick={() => setIsModalOpen(false)}
               className="flex-1 px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               type="submit"
               className="flex-1 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all"
             >
-              {editingRoom ? "Save Changes" : "Create Room"}
+              {editingRoom ? t("saveChanges") : t("createRoom")}
             </button>
           </div>
         </form>

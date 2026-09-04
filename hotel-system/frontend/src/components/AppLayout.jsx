@@ -93,8 +93,8 @@ export default function AppLayout() {
               <p className="text-xs text-slate-400 capitalize">{user?.role}</p>
             </div>
             <button className="btn sidebar-logout" onClick={() => { setSidebarOpen(false); logout(); }}>
-              {t("logout")}
-            </button>
+            {t("logout")}
+          </button>
           </div>
         </div>
       </aside>
