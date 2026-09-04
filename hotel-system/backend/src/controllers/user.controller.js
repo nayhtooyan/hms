@@ -30,11 +30,17 @@ const getUsers = asyncHandler(async (req, res) => {
     filter.active = true;
   }
 
+  //  Support filtering by role(s)
+  if (req.query.role) {
+    const roles = req.query.role.split(",").map((r) => r.trim()).filter(Boolean);
+    if (roles.length > 0) {
+      filter.role = { $in: roles };
+    }
+  }
+
   const users = await User.find(filter)
     .select("name username role active createdAt")
-    .sort({
-      createdAt: -1
-    });
+    .sort({ name: 1 });
 
   res.json(users);
 });

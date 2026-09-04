@@ -82,6 +82,11 @@ const translations = {
     guests: "guests",
     of: "of",
     roomsText: "rooms",
+    retry: "Retry",
+    refreshing: "Refreshing...",
+    cleaningTasks: "Cleaning Tasks",
+    maintenanceTasks: "Maintenance Tasks",
+    receiptNo: "Receipt No",
 
     // ROOMS
     roomsTitle: "Room Management",
@@ -463,6 +468,11 @@ const translations = {
     guests: "ဧည့်သည်",
     of: "/",
     roomsText: "အခန်း",
+    retry: "ထပ်ကြိုးစားရန်",
+    refreshing: "အသစ်ပြန်လုပ်နေသည်...",
+    cleaningTasks: "သန့်ရှင်းရေး လုပ်ငန်းများ",
+    maintenanceTasks: "ပြုပြင်ရေး လုပ်ငန်းများ",
+    receiptNo: "ဘောင်ချာ နံပါတ်",
 
     // ROOMS
     roomsTitle: "အခန်း စီမံခန့်ခွဲမှု",

@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api";
 import { useSettings } from "../SettingsContext";
-import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
+import { useAuth } from "../AuthContext";
 import { useLanguage } from "../LanguageContext";
 import {
   Hotel, BedDouble, Users, CalendarCheck, TrendingUp, DollarSign,
   ArrowUpRight, ArrowDownRight, Loader2, RefreshCw, AlertTriangle,
-  Clock, CreditCard
+  Clock, CreditCard, Wrench, Sparkles
 } from "lucide-react";
+import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
 
 function KpiCard({ icon: Icon, label, value, color = "indigo", subtitle }) {
   const colors = {
@@ -62,8 +63,15 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  
   const { formatMoney, formatDateTime } = useSettings();
+  const { user } = useAuth();
   const { t } = useLanguage();
+
+  // Get user role for conditional rendering
+  const role = user?.role || "reception";
+  const canSeeFinancial = ["admin", "manager", "reception"].includes(role);
+  const isStaff = role === "cleaner" || role === "maintenance";
 
   const loadDashboard = async () => {
     try {
@@ -72,14 +80,18 @@ export default function Dashboard() {
       const response = await api.get("/dashboard/summary");
       setData(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load dashboard");
+      setError(err.response?.data?.message || t("error"));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  useEffect(() => { loadDashboard(); }, []);
+  useEffect(() => { 
+    loadDashboard(); 
+  }, []);
+
+  // Real-time refresh
   useRealTimeRefresh(loadDashboard, ["rooms:updated", "reservations:updated", "payments:updated", "housekeeping:updated"]);
 
   const today = new Date().toLocaleDateString(undefined, {
@@ -99,7 +111,9 @@ export default function Dashboard() {
       <div className="text-center py-32">
         <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
         <p className="text-gray-600 mb-4">{error}</p>
-        <button onClick={loadDashboard} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold">Retry</button>
+        <button onClick={loadDashboard} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold">
+          {t("retry")}
+        </button>
       </div>
     );
   }
@@ -124,57 +138,90 @@ export default function Dashboard() {
           className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          {refreshing ? "Refreshing..." : "Refresh"}
+          {refreshing ? t("refreshing") : t("refresh")}
         </button>
       </div>
 
-      {/* KPI Grid */}
+      {/* KPI Grid - Role-based */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard icon={DollarSign} label={t("todayRevenue")} value={formatMoney(stats.todayRevenue)} color="emerald"  />
-        <KpiCard icon={TrendingUp} label={t("monthlyRevenue")} value={formatMoney(stats.monthlyRevenue)} color="emerald" />
+        {/* Financial KPIs - only for admin/manager/reception */}
+        {canSeeFinancial && (
+          <>
+            <KpiCard icon={DollarSign} label={t("todayRevenue")} value={formatMoney(stats.todayRevenue)} color="emerald" />
+            <KpiCard icon={TrendingUp} label={t("monthlyRevenue")} value={formatMoney(stats.monthlyRevenue)} color="emerald" />
+          </>
+        )}
+
+        {/* Operational KPIs - for everyone */}
         <KpiCard icon={ArrowUpRight} label={t("arrivalsToday")} value={stats.todayArrivals || 0} color="blue" />
         <KpiCard icon={ArrowDownRight} label={t("departuresToday")} value={stats.todayDepartures || 0} color="amber" />
+
+        {/* Staff-specific KPIs for cleaner/maintenance */}
+        {isStaff && (
+          <>
+            <KpiCard
+              icon={Sparkles}
+              label={t("cleaningTasks")}
+              value={stats.pendingCleanTasks || 0}
+              color="amber"
+            />
+            <KpiCard
+              icon={Wrench}
+              label={t("maintenanceTasks")}
+              value={stats.pendingMaintenanceTasks || 0}
+              color="red"
+            />
+          </>
+        )}
       </div>
 
-      {/* Occupancy & Room Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Occupancy */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h3 className="text-sm font-semibold text-gray-500 mb-4">{t("occupancyRate")}</h3>
-          <div className="flex items-end gap-4">
-            <p className="text-4xl font-extrabold text-gray-900">{stats.occupancyPercentage || 0}%</p>
-            <p className="text-sm text-gray-400 mb-1">{stats.occupiedRooms || 0} of {stats.totalRooms || 0} rooms</p>
+      {/* Occupancy & Room Status - Only for non-staff */}
+      {!isStaff && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <h3 className="text-sm font-semibold text-gray-500 mb-4">{t("occupancyRate")}</h3>
+            <div className="flex items-end gap-4">
+              <p className="text-4xl font-extrabold text-gray-900">{stats.occupancyPercentage || 0}%</p>
+              <p className="text-sm text-gray-400 mb-1">{stats.occupiedRooms || 0} {t("of")} {stats.totalRooms || 0} {t("roomsText")}</p>
+            </div>
+            <div className="mt-4 h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-indigo-600 rounded-full transition-all duration-1000" style={{ width: `${stats.occupancyPercentage || 0}%` }} />
+            </div>
           </div>
-          <div className="mt-4 h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-indigo-600 rounded-full transition-all duration-1000" style={{ width: `${stats.occupancyPercentage || 0}%` }} />
+
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6">
+            <h3 className="text-sm font-semibold text-gray-500 mb-4">{t("roomStatusOverview")}</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: t("available"), value: stats.availableRooms, color: "emerald" },
+                { label: t("occupied"), value: stats.occupiedRooms, color: "red" },
+                { label: t("reserved"), value: stats.reservedRooms, color: "blue" },
+                { label: t("cleaning"), value: stats.cleaningRooms, color: "amber" },
+              ].map((item) => (
+                <div key={item.label} className={`p-4 rounded-xl bg-${item.color}-50 text-center`}>
+                  <p className={`text-2xl font-extrabold text-${item.color}-600`}>{item.value || 0}</p>
+                  <p className="text-xs font-medium text-gray-500 mt-1">{item.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Room Status Grid */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6">
-          <h3 className="text-sm font-semibold text-gray-500 mb-4">{t("roomStatusOverview")}</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { label: t("available"), value: stats.availableRooms, color: "emerald" },
-              { label: t("occupied"), value: stats.occupiedRooms, color: "red" },
-              { label: t("reserved"), value: stats.reservedRooms, color: "blue" },
-              { label: t("cleaning"), value: stats.cleaningRooms, color: "amber" },
-            ].map((item) => (
-              <div key={item.label} className={`p-4 rounded-xl bg-${item.color}-50 text-center`}>
-                <p className={`text-2xl font-extrabold text-${item.color}-600`}>{item.value || 0}</p>
-                <p className="text-xs font-medium text-gray-500 mt-1">{item.label}</p>
-              </div>
-            ))}
-          </div>
+      {/* Quick Actions - Only for non-staff */}
+      {!isStaff && (
+        <div className="flex flex-wrap gap-3">
+          <Link to="/reservations" className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all text-sm">
+            + {t("newReservation")}
+          </Link>
+          <Link to="/room-board" className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all text-sm">
+            {t("viewRoomBoard")}
+          </Link>
+          <Link to="/payments" className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all text-sm">
+            {t("recordPayment")}
+          </Link>
         </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
-        <Link to="/reservations" className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all text-sm">{t("newReservation")}</Link>
-        <Link to="/room-board" className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all text-sm">{t("roomBoard")}</Link>
-        <Link to="/payments" className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all text-sm">{t("recordPayment")}</Link>
-      </div>
+      )}
 
       {/* Tables Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -242,66 +289,70 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Recent Payments */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-            <h3 className="font-bold text-gray-800">{t("recentPayments")}</h3>
-          </div>
-          {recentPayments.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">{t("noRecentPayments")}</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead><tr className="bg-gray-50/50">
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("receipt")}</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("room")}</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("method")}</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("amount")}</th>
-                </tr></thead>
-                <tbody className="divide-y divide-gray-50">
-                  {recentPayments.map((row) => (
-                    <tr key={row._id} className="hover:bg-gray-50/50">
-                      <td className="px-6 py-3 text-sm font-medium">{row.receiptNo}</td>
-                      <td className="px-6 py-3 text-sm text-gray-600">{row.reservationId?.roomId?.roomNumber || "-"}</td>
-                      <td className="px-6 py-3 text-sm text-gray-600 capitalize">{row.method}</td>
-                      <td className="px-6 py-3 text-sm font-bold text-emerald-600">{formatMoney(row.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* Recent Payments - Only for non-staff */}
+        {!isStaff && (
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+              <h3 className="font-bold text-gray-800">{t("recentPayments")}</h3>
             </div>
-          )}
-        </div>
+            {recentPayments.length === 0 ? (
+              <div className="text-center py-12 text-gray-400 text-sm">{t("noRecentPayments")}</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead><tr className="bg-gray-50/50">
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("receiptNo")}</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("room")}</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("method")}</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("amount")}</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {recentPayments.map((row) => (
+                      <tr key={row._id} className="hover:bg-gray-50/50">
+                        <td className="px-6 py-3 text-sm font-medium">{row.receiptNo}</td>
+                        <td className="px-6 py-3 text-sm text-gray-600">{row.reservationId?.roomId?.roomNumber || "-"}</td>
+                        <td className="px-6 py-3 text-sm text-gray-600 capitalize">{row.method}</td>
+                        <td className="px-6 py-3 text-sm font-bold text-emerald-600">{formatMoney(row.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Needs Attention */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-            <h3 className="font-bold text-gray-800">{t("needsAttention")}</h3>
-            <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold">{roomsNeedingAttention.length}</span>
-          </div>
-          {roomsNeedingAttention.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">{t("allRoomsOkay")}</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead><tr className="bg-gray-50/50">
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Room</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
-                </tr></thead>
-                <tbody className="divide-y divide-gray-50">
-                  {roomsNeedingAttention.map((row) => (
-                    <tr key={row._id} className="hover:bg-gray-50/50">
-                      <td className="px-6 py-3 text-sm font-bold">{row.roomNumber}</td>
-                      <td className="px-6 py-3 text-sm text-gray-600">{row.roomType}</td>
-                      <td className="px-6 py-3"><StatusBadge status={row.status} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* Needs Attention - Only for non-staff */}
+        {!isStaff && (
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+              <h3 className="font-bold text-gray-800">{t("needsAttention")}</h3>
+              <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold">{roomsNeedingAttention.length}</span>
             </div>
-          )}
-        </div>
+            {roomsNeedingAttention.length === 0 ? (
+              <div className="text-center py-12 text-gray-400 text-sm">{t("allRoomsOkay")}</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead><tr className="bg-gray-50/50">
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("room")}</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("type")}</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">{t("status")}</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {roomsNeedingAttention.map((row) => (
+                      <tr key={row._id} className="hover:bg-gray-50/50">
+                        <td className="px-6 py-3 text-sm font-bold">{row.roomNumber}</td>
+                        <td className="px-6 py-3 text-sm text-gray-600">{row.roomType}</td>
+                        <td className="px-6 py-3"><StatusBadge status={row.status} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

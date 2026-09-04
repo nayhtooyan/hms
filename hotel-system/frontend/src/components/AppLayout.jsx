@@ -12,7 +12,7 @@ import {
 
 const navItems = [
   { to: "/", labelKey: "dashboard", icon: LayoutDashboard, end: true, roles: ["admin", "manager", "reception", "cleaner", "maintenance"] },
-  { to: "/room-board", labelKey: "roomBoard", icon: BedDouble, roles: ["admin", "manager", "reception", "cleaner", "maintenance"] },
+  { to: "/room-board", labelKey: "roomBoard", icon: BedDouble, roles: ["admin", "manager", "reception"] },
   { to: "/rooms", labelKey: "rooms", icon: Home, roles: ["admin", "manager", "reception"] },
   { to: "/reservations", labelKey: "reservations", icon: CalendarCheck, roles: ["admin", "manager", "reception"] },
   { to: "/vouchers", labelKey: "vouchers", icon: Ticket, roles: ["admin", "manager", "reception"] },

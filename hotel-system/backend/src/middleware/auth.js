@@ -11,13 +11,16 @@ const rolePermissions = {
     "payments.*",
     "housekeeping.*",
     "users.view",
+    "settings.manage",
     "reports.view",
     "backups.manage",
-    "audit.view"
+    "audit.view",
+    "dashboard.view"
   ],
 
   reception: [
     "rooms.view",
+    "rooms.update",
     "reservations.view",
     "reservations.create",
     "reservations.checkin",
@@ -28,19 +31,26 @@ const rolePermissions = {
     "payments.view",
     "payments.create",
     "housekeeping.view",
-    "reports.view"
+    "housekeeping.update",
+    "reports.view",
+    "dashboard.view",
+    "users.view"
   ],
 
   cleaner: [
     "rooms.view",
     "housekeeping.view",
-    "housekeeping.update"
+    "housekeeping.update",
+    "dashboard.view",
+    "users.view"
   ],
 
   maintenance: [
     "rooms.view",
     "housekeeping.view",
-    "housekeeping.update"
+    "housekeeping.update",
+    "dashboard.view",
+    "users.view"
   ]
 };
 
@@ -50,14 +60,11 @@ const hasPermission = (user, permission) => {
     : rolePermissions[user.role] || [];
 
   if (permissions.includes("*")) return true;
-
   if (permissions.includes(permission)) return true;
 
   return permissions.some((p) => {
     if (!p.endsWith(".*")) return false;
-
     const prefix = p.slice(0, -1);
-
     return permission.startsWith(prefix);
   });
 };
@@ -65,34 +72,25 @@ const hasPermission = (user, permission) => {
 const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || "";
-
     const token = authHeader.startsWith("Bearer ")
       ? authHeader.split(" ")[1]
       : null;
 
     if (!token) {
-      return res.status(401).json({
-        message: "No token provided"
-      });
+      return res.status(401).json({ message: "No token provided" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
     const user = await User.findById(decoded.sub);
 
     if (!user || !user.active) {
-      return res.status(401).json({
-        message: "Unauthorized"
-      });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     req.user = user;
-
     next();
   } catch (error) {
-    return res.status(401).json({
-      message: "Unauthorized"
-    });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 };
 
@@ -107,8 +105,9 @@ const requirePermission = (permissions) => {
     );
 
     if (!allowed) {
+      console.log(`[Permission Denied] User: ${req.user?.name}, Role: ${req.user?.role}, Required: ${requiredPermissions.join(", ")}`);
       return res.status(403).json({
-        message: "Forbidden"
+        message: "Forbidden - You don't have permission"
       });
     }
 
@@ -116,7 +115,4 @@ const requirePermission = (permissions) => {
   };
 };
 
-module.exports = {
-  authenticate,
-  requirePermission
-};
+module.exports = { authenticate, requirePermission, hasPermission };
