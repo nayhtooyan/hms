@@ -1,5 +1,6 @@
 const Reservation = require("../models/Reservation");
 const Room = require("../models/Room");
+const { emitEvent } = require("../utils/socketEmit");
 const Voucher = require("../models/Voucher"); // Added for voucher support
 const HousekeepingTask = require("../models/HousekeepingTask");
 
@@ -189,6 +190,8 @@ const createReservation = asyncHandler(async (req, res) => {
   );
 
   res.status(201).json(populated);
+  emitEvent(req, "reservations:updated", { action: "created", reservationId: populated._id });
+  emitEvent(req, "rooms:updated", { action: "status_changed" });
 });
 
 const checkInReservation = asyncHandler(async (req, res) => {
@@ -221,6 +224,8 @@ const checkInReservation = asyncHandler(async (req, res) => {
   );
 
   res.json(populated);
+  emitEvent(req, "reservations:updated", { action: "checked_in", reservationId: populated._id });
+  emitEvent(req, "rooms:updated", { action: "status_changed" });
 });
 
 const checkOutReservation = asyncHandler(async (req, res) => {
@@ -286,6 +291,9 @@ const checkOutReservation = asyncHandler(async (req, res) => {
   );
 
   res.json(populated);
+  emitEvent(req, "reservations:updated", { action: "checked_out", reservationId: populated._id });
+  emitEvent(req, "rooms:updated", { action: "status_changed" });
+  emitEvent(req, "housekeeping:updated", { action: "task_created" });
 });
 
 const cancelReservation = asyncHandler(async (req, res) => {
@@ -319,6 +327,8 @@ const cancelReservation = asyncHandler(async (req, res) => {
   );
 
   res.json(populated);
+  emitEvent(req, "reservations:updated", { action: "cancelled", reservationId: populated._id });
+  emitEvent(req, "rooms:updated", { action: "status_changed" });
 });
 
 module.exports = {

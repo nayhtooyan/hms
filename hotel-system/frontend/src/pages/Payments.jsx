@@ -5,6 +5,7 @@ import { useSettings } from "../SettingsContext";
 import { useToast } from "../components/ToastContext";
 import Modal from "../components/Modal";
 import { Search, Loader2, CreditCard, FileText } from "lucide-react";
+import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
 import { useLanguage } from "../LanguageContext";
 
 export default function Payments() {
@@ -30,6 +31,7 @@ export default function Payments() {
   };
 
   useEffect(() => { loadData(); }, []);
+  useRealTimeRefresh(loadData, ["payments:updated", "reservations:updated"]);
 
   const getPaid = (id) => payments.filter(p => p.status === "completed" && String(p.reservationId?._id || p.reservationId) === String(id)).reduce((s, p) => s + Number(p.amount || 0), 0);
 

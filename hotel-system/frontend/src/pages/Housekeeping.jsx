@@ -4,6 +4,7 @@ import { useSettings } from "../SettingsContext";
 import { useToast } from "../components/ToastContext";
 import Modal from "../components/Modal";
 import { Plus, Loader2, Play, CheckCircle, XCircle } from "lucide-react";
+import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
 import { useLanguage } from "../LanguageContext";
 
 export default function Housekeeping() {
@@ -25,6 +26,7 @@ export default function Housekeeping() {
   };
 
   useEffect(() => { loadAll(); }, []);
+  useRealTimeRefresh(loadAll, ["housekeeping:updated", "rooms:updated"]);
 
   const createTask = async (e) => {
     e.preventDefault();

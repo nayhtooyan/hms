@@ -4,6 +4,7 @@ import { useSettings } from "../SettingsContext";
 import { useToast } from "../components/ToastContext";
 import Modal from "../components/Modal";
 import { Plus, Search, Loader2, LogIn, LogOut, XCircle, Ticket, UserPlus, Clock, AlertTriangle } from "lucide-react";
+import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
 import { useLanguage } from "../LanguageContext";
 
 function StatusBadge({ status }) {
@@ -103,6 +104,7 @@ export default function Reservations() {
   };
 
   useEffect(() => { loadData(); }, []);
+  useRealTimeRefresh(loadData, ["reservations:updated", "rooms:updated", "payments:updated"]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 

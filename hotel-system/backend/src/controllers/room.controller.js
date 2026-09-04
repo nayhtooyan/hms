@@ -1,5 +1,6 @@
 const Room = require("../models/Room");
 const asyncHandler = require("../utils/asyncHandler");
+const { emitEvent } = require("../utils/socketEmit");
 
 const { logAudit } = require("../utils/auditLogger");
 
@@ -18,6 +19,7 @@ const getRooms = asyncHandler(async (req, res) => {
   res.json(rooms);
 });
 
+
 const createRoom = asyncHandler(async (req, res) => {
   const room = await Room.create({
     ...req.body,
@@ -27,6 +29,7 @@ const createRoom = asyncHandler(async (req, res) => {
   await logAudit(req, "CREATE", "Room", room._id, null, room.toObject());
 
   res.status(201).json(room);
+  emitEvent(req, "rooms:updated", { action: "created", roomId: room._id });
 });
 
 const updateRoom = asyncHandler(async (req, res) => {
@@ -50,6 +53,7 @@ const updateRoom = asyncHandler(async (req, res) => {
   await logAudit(req, "UPDATE", "Room", room._id, oldRoom.toObject(), room.toObject());
 
   res.json(room);
+  emitEvent(req, "rooms:updated", { action: "updated", roomId: room._id });
 });
 
 const updateRoomStatus = asyncHandler(async (req, res) => {
@@ -82,6 +86,7 @@ const updateRoomStatus = asyncHandler(async (req, res) => {
   await logAudit(req, "UPDATE_STATUS", "Room", room._id, oldRoom.toObject(), room.toObject());
 
   res.json(room);
+  emitEvent(req, "rooms:updated", { action: "status_changed", roomId: room._id, status: room.status });
 });
 
 const deleteRoom = asyncHandler(async (req, res) => {
@@ -116,6 +121,7 @@ const deleteRoom = asyncHandler(async (req, res) => {
   res.json({
     message: "Room disabled"
   });
+  emitEvent(req, "rooms:updated", { action: "deleted", roomId: room._id });
 });
 
 module.exports = {

@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from "./AuthContext";
 import { LanguageProvider } from "./LanguageContext";
 import { SettingsProvider } from "./SettingsContext";
 import { ToastProvider } from "./components/ToastContext"; // Import Toast
-
+import { SocketProvider } from "./SocketContext";
 
 import AppLayout from "./components/AppLayout.jsx";
 import Login from "./pages/Login.jsx";
@@ -28,14 +28,17 @@ function Protected({ children }) {
   return children;
 }
 
+
+
 export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
         <SettingsProvider>
-          <ToastProvider> {/* Wrap App in ToastProvider */}
-            <BrowserRouter>
-              <Routes>
+          <ToastProvider>
+            <SocketProvider>
+              <BrowserRouter>
+                <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route
                   path="/"
@@ -61,7 +64,8 @@ export default function App() {
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
               </Routes>
-            </BrowserRouter>
+              </BrowserRouter>
+            </SocketProvider>
           </ToastProvider>
         </SettingsProvider>
       </AuthProvider>

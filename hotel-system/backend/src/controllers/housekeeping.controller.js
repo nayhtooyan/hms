@@ -1,5 +1,6 @@
 const HousekeepingTask = require("../models/HousekeepingTask");
 const Room = require("../models/Room");
+const { emitEvent } = require("../utils/socketEmit");
 
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -116,6 +117,7 @@ const createTask = asyncHandler(async (req, res) => {
   const populated = await populateTask(task);
 
   res.status(201).json(populated);
+  emitEvent(req, "housekeeping:updated", { action: "created" });
 });
 
 const startTask = asyncHandler(async (req, res) => {
@@ -140,6 +142,7 @@ const startTask = asyncHandler(async (req, res) => {
   const populated = await populateTask(task);
 
   res.json(populated);
+  emitEvent(req, "housekeeping:updated", { action: "started" });
 });
 
 const completeTask = asyncHandler(async (req, res) => {
@@ -192,6 +195,8 @@ const completeTask = asyncHandler(async (req, res) => {
   const populated = await populateTask(task);
 
   res.json(populated);
+  emitEvent(req, "housekeeping:updated", { action: "completed" });
+  emitEvent(req, "rooms:updated", { action: "status_changed" });
 });
 
 const cancelTask = asyncHandler(async (req, res) => {
@@ -243,6 +248,7 @@ const cancelTask = asyncHandler(async (req, res) => {
   const populated = await populateTask(task);
 
   res.json(populated);
+  emitEvent(req, "housekeeping:updated", { action: "cancelled" });
 });
 
 const updateRoomStatus = asyncHandler(async (req, res) => {
@@ -283,6 +289,7 @@ const updateRoomStatus = asyncHandler(async (req, res) => {
   await room.save();
 
   res.json(room);
+  emitEvent(req, "rooms:updated", { action: "status_changed" });
 });
 
 module.exports = {

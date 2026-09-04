@@ -1,5 +1,6 @@
 const Payment = require("../models/Payment");
 const Reservation = require("../models/Reservation");
+const { emitEvent } = require("../utils/socketEmit");
 
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -109,6 +110,8 @@ const createPayment = asyncHandler(async (req, res) => {
   });
 
   res.status(201).json(populated);
+  emitEvent(req, "payments:updated", { action: "created" });
+  emitEvent(req, "reservations:updated", { action: "payment_added" });
 });
 
 const getInvoiceData = asyncHandler(async (req, res) => {

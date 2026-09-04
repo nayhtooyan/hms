@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api";
 import { useSettings } from "../SettingsContext";
+import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
 import { useLanguage } from "../LanguageContext";
 import {
   Hotel, BedDouble, Users, CalendarCheck, TrendingUp, DollarSign,
@@ -79,6 +80,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => { loadDashboard(); }, []);
+  useRealTimeRefresh(loadDashboard, ["rooms:updated", "reservations:updated", "payments:updated", "housekeeping:updated"]);
 
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "long", year: "numeric", month: "long", day: "numeric"

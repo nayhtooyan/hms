@@ -4,6 +4,7 @@ import { useSettings } from "../SettingsContext";
 import { useToast } from "../components/ToastContext";
 import Modal from "../components/Modal";
 import { Plus, Search, Loader2, Trash2, Ticket } from "lucide-react";
+import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
 import { useLanguage } from "../LanguageContext";
 
 export default function Vouchers() {
@@ -22,6 +23,7 @@ export default function Vouchers() {
   };
 
   useEffect(() => { loadVouchers(); }, []);
+  useRealTimeRefresh(loadVouchers, ["vouchers:updated"]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 

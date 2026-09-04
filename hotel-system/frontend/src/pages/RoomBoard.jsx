@@ -4,6 +4,7 @@ import { useSettings } from "../SettingsContext";
 import { useToast } from "../components/ToastContext";
 import Modal from "../components/Modal";
 import { Loader2, RefreshCw, BedDouble, Plus, UserPlus, Ticket, Users, XCircle } from "lucide-react";
+import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
 import { useLanguage } from "../LanguageContext";
 
 export default function RoomBoard() {
@@ -43,6 +44,7 @@ export default function RoomBoard() {
   };
 
   useEffect(() => { loadRooms(); }, []);
+  useRealTimeRefresh(loadRooms, ["rooms:updated", "reservations:updated", "housekeeping:updated"]);
 
   const updateStatus = async (roomId, status) => {
     try {

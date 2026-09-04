@@ -4,6 +4,7 @@ import { useSettings } from "../SettingsContext";
 import { useToast } from "../components/ToastContext";
 import Modal from "../components/Modal";
 import { Plus, Search, Home, Pencil, Trash2, Loader2, Users } from "lucide-react";
+import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
 import { useLanguage } from "../LanguageContext";
 
 export default function Rooms() {
@@ -48,7 +49,7 @@ export default function Rooms() {
   useEffect(() => {
     loadRooms();
   }, []);
-
+  useRealTimeRefresh(loadRooms, ["rooms:updated"]);
 
   const handleOpenModal = (room = null) => {
     setEditingRoom(room);
