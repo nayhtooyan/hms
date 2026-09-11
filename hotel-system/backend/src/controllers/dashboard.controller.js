@@ -35,258 +35,138 @@ const getDateRanges = () => {
 };
 
 const getDashboardSummary = asyncHandler(async (req, res) => {
-  const {
-    startOfDay,
-    endOfDay,
-    startOfMonth,
-    endOfMonth
-  } = getDateRanges();
+  const now = new Date();
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
 
-  const [
-    totalRooms,
-    availableRooms,
-    occupiedRooms,
-    reservedRooms,
-    cleaningRooms,
-    maintenanceRooms,
-    blockedRooms
-  ] = await Promise.all([
-    Room.countDocuments({
-      active: true
-    }),
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    Room.countDocuments({
-      active: true,
-      status: "available"
-    }),
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
 
-    Room.countDocuments({
-      active: true,
-      status: "occupied"
-    }),
-
-    Room.countDocuments({
-      active: true,
-      status: "reserved"
-    }),
-
-    Room.countDocuments({
-      active: true,
-      status: "cleaning"
-    }),
-
-    Room.countDocuments({
-      active: true,
-      status: "maintenance"
-    }),
-
-    Room.countDocuments({
-      active: true,
-      status: "blocked"
-    })
+  // Room stats
+  const totalRooms = await Room.countDocuments({ active: true });
+  const roomStatusCounts = await Room.aggregate([
+    { $match: { active: true } },
+    { $group: { _id: "$status", count: { $sum: 1 } } }
   ]);
 
-  const arrivalFilter = {
-    scheduledCheckIn: {
-      $gte: startOfDay,
-      $lte: endOfDay
-    },
-    status: {
-      $nin: ["cancelled"]
-    }
-  };
+  const roomStatusMap = {};
+  roomStatusCounts.forEach(item => { roomStatusMap[item._id] = item.count; });
 
-  const departureFilter = {
-    scheduledCheckOut: {
-      $gte: startOfDay,
-      $lte: endOfDay
-    },
-    status: {
-      $nin: ["cancelled"]
-    }
-  };
+  const occupiedRooms = roomStatusMap["occupied"] || 0;
+  const availableRooms = roomStatusMap["available"] || 0;
+  const reservedRooms = roomStatusMap["reserved"] || 0;
+  const cleaningRooms = roomStatusMap["cleaning"] || 0;
+  const maintenanceRooms = roomStatusMap["maintenance"] || 0;
+  const blockedRooms = roomStatusMap["blocked"] || 0;
+  const occupancyPercentage = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
 
-  const [
-    todayArrivals,
-    todayDepartures,
-    arrivals,
-    departures
-  ] = await Promise.all([
-    Reservation.countDocuments(arrivalFilter),
-
-    Reservation.countDocuments(departureFilter),
-
-    Reservation.find(arrivalFilter)
-      .populate("roomId", "roomNumber roomType")
-      .sort({
-        scheduledCheckIn: 1
-      })
-      .limit(10),
-
-    Reservation.find(departureFilter)
-      .populate("roomId", "roomNumber roomType")
-      .sort({
-        scheduledCheckOut: 1
-      })
-      .limit(10)
+  // Today's revenue
+  const todayRevenueAgg = await Payment.aggregate([
+    { $match: { status: "completed", createdAt: { $gte: startOfToday, $lte: endOfToday } } },
+    { $group: { _id: null, total: { $sum: "$amount" } } }
   ]);
+  const todayRevenue = todayRevenueAgg[0]?.total || 0;
 
-  const todayRevenueResult = await Payment.aggregate([
-    {
-      $match: {
-        status: "completed",
-        createdAt: {
-          $gte: startOfDay,
-          $lte: endOfDay
-        }
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        total: {
-          $sum: "$amount"
-        }
-      }
-    }
+  // Monthly revenue
+  const monthlyRevenueAgg = await Payment.aggregate([
+    { $match: { status: "completed", createdAt: { $gte: startOfMonth, $lte: endOfMonth } } },
+    { $group: { _id: null, total: { $sum: "$amount" } } }
   ]);
+  const monthlyRevenue = monthlyRevenueAgg[0]?.total || 0;
 
-  const monthlyRevenueResult = await Payment.aggregate([
-    {
-      $match: {
-        status: "completed",
-        createdAt: {
-          $gte: startOfMonth,
-          $lte: endOfMonth
-        }
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        total: {
-          $sum: "$amount"
-        }
-      }
-    }
-  ]);
+  // Total payments count this month
+  const totalPaymentsCount = await Payment.countDocuments({
+    status: "completed",
+    createdAt: { $gte: startOfMonth, $lte: endOfMonth }
+  });
 
-  const todayRevenue = todayRevenueResult[0]?.total || 0;
-  const monthlyRevenue = monthlyRevenueResult[0]?.total || 0;
+  // Today arrivals & departures
+  const todayArrivals = await Reservation.countDocuments({
+    scheduledCheckIn: { $gte: startOfToday, $lte: endOfToday },
+    status: { $nin: ["cancelled"] }
+  });
+  const todayDepartures = await Reservation.countDocuments({
+    scheduledCheckOut: { $gte: startOfToday, $lte: endOfToday },
+    status: { $nin: ["cancelled"] }
+  });
 
-  const [
-    pendingCleanTasks,
-    pendingMaintenanceTasks
-  ] = await Promise.all([
-    HousekeepingTask.countDocuments({
-      type: "cleaning",
-      status: {
-        $in: ["pending", "in_progress"]
-      }
-    }),
+  // Arrivals list
+  const arrivals = await Reservation.find({
+    scheduledCheckIn: { $gte: startOfToday, $lte: endOfToday },
+    status: { $nin: ["cancelled"] }
+  }).populate("roomId", "roomNumber").limit(20).lean();
 
-    HousekeepingTask.countDocuments({
-      type: "maintenance",
-      status: {
-        $in: ["pending", "in_progress"]
-      }
-    })
-  ]);
+  // Departures list
+  const departures = await Reservation.find({
+    scheduledCheckOut: { $gte: startOfToday, $lte: endOfToday },
+    status: { $nin: ["cancelled"] }
+  }).populate("roomId", "roomNumber").limit(20).lean();
 
-  const roomsNeedingAttention = await Room.find({
-    active: true,
-    status: {
-      $in: ["cleaning", "maintenance", "blocked"]
-    }
-  })
-    .sort({
-      floor: 1,
-      roomNumber: 1
-    })
-    .limit(12);
-
-  const recentReservations = await Reservation.find()
-    .sort({
-      createdAt: -1
-    })
-    .limit(8)
-    .populate("roomId", "roomNumber roomType");
-
-  const recentPayments = await Payment.find()
-    .sort({
-      createdAt: -1
-    })
-    .limit(8)
+  // Recent payments
+  const recentPayments = await Payment.find({ status: "completed" })
+    .sort({ createdAt: -1 })
+    .limit(10)
     .populate({
       path: "reservationId",
-      select: "bookingNo guest roomId",
-      populate: {
-        path: "roomId",
-        select: "roomNumber"
-      }
-    });
-
-  const activeReservations = await Reservation.find({
-    status: {
-      $in: ["reserved", "checked_in", "checked_out"]
-    }
-  })
-    .select(
-      "bookingNo status guest priceSnapshot scheduledCheckOut roomId"
-    )
-    .populate("roomId", "roomNumber")
+      select: "bookingNo roomId",
+      populate: { path: "roomId", select: "roomNumber" }
+    })
     .lean();
 
-  const paymentAggregation = await Payment.aggregate([
+  // Rooms needing attention
+  const roomsNeedingAttention = await Room.find({
+    active: true,
+    status: { $in: ["cleaning", "maintenance", "blocked"] }
+  }).limit(20).lean();
+
+  // Housekeeping task counts
+  const pendingCleanTasks = await HousekeepingTask.countDocuments({
+    type: "cleaning",
+    status: { $in: ["pending", "in_progress"] }
+  });
+  const pendingMaintenanceTasks = await HousekeepingTask.countDocuments({
+    type: "maintenance",
+    status: { $in: ["pending", "in_progress"] }
+  });
+
+  const ninetyDaysAgo = new Date(now);
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  const revenueByDateAgg = await Payment.aggregate([
     {
       $match: {
-        status: "completed"
+        status: "completed",
+        createdAt: { $gte: ninetyDaysAgo, $lte: endOfToday }
       }
     },
     {
       $group: {
-        _id: "$reservationId",
-        paid: {
-          $sum: "$amount"
-        }
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+        total: { $sum: "$amount" },
+        count: { $sum: 1 }
       }
-    }
+    },
+    { $sort: { _id: 1 } }
   ]);
 
-  const paidMap = new Map(
-    paymentAggregation.map((item) => [
-      String(item._id),
-      item.paid
-    ])
-  );
+  const revenueMap = {};
+  revenueByDateAgg.forEach(item => { revenueMap[item._id] = { total: item.total, count: item.count }; });
 
-  const unpaidReservations = activeReservations
-    .map((reservation) => {
-      const total = Number(reservation.priceSnapshot?.total || 0);
-
-      const paid = Number(paidMap.get(String(reservation._id)) || 0);
-
-      const balance = total - paid;
-
-      return {
-        id: reservation._id,
-        bookingNo: reservation.bookingNo,
-        room: reservation.roomId?.roomNumber || "-",
-        guest: reservation.guest?.name || "-",
-        status: reservation.status,
-        total,
-        paid,
-        balance
-      };
-    })
-    .filter((reservation) => reservation.balance > 0)
-    .sort((a, b) => b.balance - a.balance)
-    .slice(0, 8);
-
-  const occupancyPercentage =
-    totalRooms > 0
-      ? Math.round((occupiedRooms / totalRooms) * 100)
-      : 0;
+  const revenueByDate = [];
+  const fillDate = new Date(ninetyDaysAgo);
+  while (fillDate <= endOfToday) {
+    const dateStr = fillDate.toISOString().split("T")[0];
+    revenueByDate.push({
+      _id: dateStr,
+      total: revenueMap[dateStr]?.total || 0,
+      count: revenueMap[dateStr]?.count || 0,
+    });
+    fillDate.setDate(fillDate.getDate() + 1);
+  }
 
   res.json({
     stats: {
@@ -297,21 +177,20 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
       cleaningRooms,
       maintenanceRooms,
       blockedRooms,
-      todayArrivals,
-      todayDepartures,
+      occupancyPercentage,
       todayRevenue,
       monthlyRevenue,
-      occupancyPercentage,
+      totalPaymentsCount,
+      todayArrivals,
+      todayDepartures,
       pendingCleanTasks,
-      pendingMaintenanceTasks
+      pendingMaintenanceTasks,
     },
-
     arrivals,
     departures,
-    unpaidReservations,
+    recentPayments,
     roomsNeedingAttention,
-    recentReservations,
-    recentPayments
+    revenueByDate,  
   });
 });
 

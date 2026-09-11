@@ -26,7 +26,7 @@ const translations = {
     details: "Details",
 
     // LOGIN
-    loginTitle: "Hotel PMS",
+    loginTitle: "Hotel Management System",
     loginSubtitle: "Sign in to your account",
     username: "Username",
     password: "Password",

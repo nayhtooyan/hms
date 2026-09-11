@@ -39,11 +39,17 @@ export const ToastProvider = ({ children }) => {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`flex items-center gap-3 p-4 rounded-xl shadow-lg bg-white border border-gray-100 ${borders[toast.type]} animate-slide-in-right`}
+            className={`flex items-center gap-3 p-4 rounded-xl backdrop-blur-xl border animate-slide-up ${
+              toast.type === "success"
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                : toast.type === "error"
+                ? "bg-red-500/10 border-red-500/30 text-red-300"
+                : "bg-blue-500/10 border-blue-500/30 text-blue-300"
+            }`}
           >
             {icons[toast.type]}
-            <p className="text-sm font-medium text-gray-800 flex-1">{toast.message}</p>
-            <button onClick={() => removeToast(toast.id)} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <p className="text-sm font-medium flex-1">{toast.message}</p>
+            <button onClick={() => removeToast(toast.id)} className="text-gray-500 hover:text-gray-300 transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>

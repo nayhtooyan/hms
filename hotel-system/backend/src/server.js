@@ -17,7 +17,7 @@ const start = async () => {
   const io = new Server(server, {
     cors: {
       origin: "*",
-      methods: ["GET", "POST"],
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     },
   });
 
@@ -34,6 +34,7 @@ const start = async () => {
 
   server.listen(PORT, () => {
     console.log(`Backend running on http://localhost:${PORT}`);
+    console.log(`[Socket] WebSocket server ready`);
   });
 };
 

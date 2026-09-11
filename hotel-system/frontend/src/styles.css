@@ -1,25 +1,299 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
-  font-family: 'Inter', sans-serif;
-  @apply bg-gray-50 text-gray-900 antialiased;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #0f172a;
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { @apply bg-gray-300 rounded-full; }
-::-webkit-scrollbar-thumb:hover { @apply bg-gray-400; }
-
-/* Utility class for inputs */
-.input-primary {
-  @apply w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm;
+/* Custom Scrollbar - Dark Theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.label-primary {
-  @apply block text-sm font-semibold text-gray-700 mb-1.5;
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* =========================================
+   UTILITY CLASSES - DARK THEME
+   ========================================= */
+
+@layer components {
+  /* Primary Button */
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl font-semibold text-white 
+           bg-gradient-to-r from-purple-600 to-indigo-600 
+           hover:from-purple-500 hover:to-indigo-500 
+           transition-all duration-300 
+           active:scale-95 
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    @apply px-6 py-3 rounded-xl font-semibold 
+           text-gray-300 bg-gray-800 
+           border border-gray-700 
+           hover:bg-gray-700 hover:text-white 
+           transition-all duration-300 
+           active:scale-95;
+  }
+
+  /* Danger Button */
+  .btn-danger {
+    @apply px-6 py-3 rounded-xl font-semibold text-white 
+           bg-gradient-to-r from-red-600 to-rose-600 
+           hover:from-red-500 hover:to-rose-500 
+           transition-all duration-300 
+           active:scale-95;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
+  }
+
+  .btn-danger:hover {
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  }
+
+  /* Success Button */
+  .btn-success {
+    @apply px-6 py-3 rounded-xl font-semibold text-white 
+           bg-gradient-to-r from-emerald-600 to-teal-600 
+           hover:from-emerald-500 hover:to-teal-500 
+           transition-all duration-300 
+           active:scale-95;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+  }
+
+  .btn-success:hover {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  }
+
+  /* Input Fields - Dark */
+  .input-dark {
+    @apply w-full px-4 py-3 rounded-xl 
+           text-gray-200 
+           bg-gray-800/50 
+           border border-gray-700 
+           focus:bg-gray-800 
+           focus:border-purple-500 
+           outline-none 
+           transition-all duration-300 
+           placeholder-gray-500;
+  }
+
+  .input-dark:focus {
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+  }
+
+  /* Label - Dark */
+  .label-dark {
+    @apply block text-sm font-semibold text-gray-400 mb-2;
+  }
+
+  /* Card - Dark */
+  .card-dark {
+    @apply bg-gray-800/50 
+           backdrop-blur-xl 
+           border border-gray-700/50 
+           rounded-2xl 
+           transition-all duration-300;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  }
+
+  .card-dark:hover {
+    @apply border-gray-600/50;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Page Header */
+  .page-header-dark {
+    @apply mb-8;
+  }
+
+  .page-title-dark {
+    @apply text-2xl lg:text-3xl font-extrabold text-white tracking-tight;
+  }
+
+  .page-subtitle-dark {
+    @apply text-gray-400 text-sm mt-2;
+  }
+
+  /* Badge Styles */
+  .badge-purple {
+    @apply px-3 py-1 rounded-full text-xs font-bold 
+           bg-purple-500/20 text-purple-300 border border-purple-500/30;
+  }
+
+  .badge-emerald {
+    @apply px-3 py-1 rounded-full text-xs font-bold 
+           bg-emerald-500/20 text-emerald-300 border border-emerald-500/30;
+  }
+
+  .badge-amber {
+    @apply px-3 py-1 rounded-full text-xs font-bold 
+           bg-amber-500/20 text-amber-300 border border-amber-500/30;
+  }
+
+  .badge-red {
+    @apply px-3 py-1 rounded-full text-xs font-bold 
+           bg-red-500/20 text-red-300 border border-red-500/30;
+  }
+
+  .badge-blue {
+    @apply px-3 py-1 rounded-full text-xs font-bold 
+           bg-blue-500/20 text-blue-300 border border-blue-500/30;
+  }
+
+  .badge-gray {
+    @apply px-3 py-1 rounded-full text-xs font-bold 
+           bg-gray-500/20 text-gray-300 border border-gray-500/30;
+  }
+
+  /* Table Styles - Dark */
+  .table-dark {
+    @apply w-full;
+  }
+
+  .table-dark thead tr {
+    @apply bg-gray-800/80 border-b border-gray-700/50;
+  }
+
+  .table-dark th {
+    @apply px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider;
+  }
+
+  .table-dark tbody tr {
+    @apply border-b border-gray-700/30 hover:bg-gray-700/20 transition-colors;
+  }
+
+  .table-dark td {
+    @apply px-6 py-4 text-sm text-gray-300;
+  }
+
+  /* Alert Styles - Dark */
+  .alert-dark-success {
+    @apply p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm font-medium;
+  }
+
+  .alert-dark-error {
+    @apply p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm font-medium;
+  }
+
+  .alert-dark-warning {
+    @apply p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm font-medium;
+  }
+
+  .alert-dark-info {
+    @apply p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-sm font-medium;
+  }
+
+  /* Modal Overlay - Dark */
+  .modal-overlay-dark {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+  }
+
+  .modal-content-dark {
+    @apply relative w-full max-w-2xl 
+           bg-gray-900 
+           border border-gray-700/50 
+           rounded-2xl;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease-out;
+  }
+
+  /* Gradient Text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent;
+  }
+
+  /* Glass Effect */
+  .glass-dark {
+    @apply bg-gray-900/60 backdrop-blur-xl border border-gray-700/30;
+  }
+}
+
+/* =========================================
+   ANIMATIONS
+   ========================================= */
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Glow utilities (used in inline styles and direct classes) */
+.shadow-glow {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+.shadow-glow-lg {
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.4);
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .card-dark {
+    background: white !important;
+    border-color: #e5e7eb !important;
+    box-shadow: none !important;
+  }
 }

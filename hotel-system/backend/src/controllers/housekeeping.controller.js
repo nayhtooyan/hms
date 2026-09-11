@@ -1,6 +1,6 @@
+const { emitEvent } = require("../utils/socketEmit");
 const HousekeepingTask = require("../models/HousekeepingTask");
 const Room = require("../models/Room");
-const { emitEvent } = require("../utils/socketEmit");
 
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -72,6 +72,7 @@ const getTasks = asyncHandler(async (req, res) => {
   res.json(tasks);
 });
 
+//Create Task
 const createTask = asyncHandler(async (req, res) => {
   const { roomId, type, priority, assignedTo, notes } = req.body;
 
@@ -116,10 +117,11 @@ const createTask = asyncHandler(async (req, res) => {
 
   const populated = await populateTask(task);
 
-  res.status(201).json(populated);
   emitEvent(req, "housekeeping:updated", { action: "created" });
+  res.status(201).json(populated);
 });
 
+//Start Task
 const startTask = asyncHandler(async (req, res) => {
   const task = await HousekeepingTask.findById(req.params.id);
 
@@ -141,10 +143,11 @@ const startTask = asyncHandler(async (req, res) => {
 
   const populated = await populateTask(task);
 
-  res.json(populated);
   emitEvent(req, "housekeeping:updated", { action: "started" });
+  res.json(populated);
 });
 
+//Complete Task
 const completeTask = asyncHandler(async (req, res) => {
   const task = await HousekeepingTask.findById(req.params.id);
 
@@ -194,11 +197,13 @@ const completeTask = asyncHandler(async (req, res) => {
 
   const populated = await populateTask(task);
 
-  res.json(populated);
   emitEvent(req, "housekeeping:updated", { action: "completed" });
   emitEvent(req, "rooms:updated", { action: "status_changed" });
+  emitEvent(req, "dashboard:updated", { action: "data_changed" });
+  res.json(populated);
 });
 
+//Cancel Task
 const cancelTask = asyncHandler(async (req, res) => {
   const task = await HousekeepingTask.findById(req.params.id);
 
@@ -247,8 +252,8 @@ const cancelTask = asyncHandler(async (req, res) => {
 
   const populated = await populateTask(task);
 
-  res.json(populated);
   emitEvent(req, "housekeeping:updated", { action: "cancelled" });
+  res.json(populated);
 });
 
 const updateRoomStatus = asyncHandler(async (req, res) => {
