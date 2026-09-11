@@ -138,7 +138,6 @@ export default function RoomBoard() {
         scheduledCheckOut: new Date(form.scheduledCheckOut).toISOString(),
         adults: Number(form.adults || 1),
         children: Number(form.children || 0),
-        // FIX: Only allow extra beds for Superior and above
         extraBeds: canAddExtraBed(selectedRoom) ? Number(form.extraBeds || 0) : 0,
         voucherId: appliedVoucher?.voucherId || null,
         source: isWalkIn ? "walk_in" : "reception",
@@ -354,7 +353,7 @@ export default function RoomBoard() {
               <div className="sm:col-span-2"><label className="label-primary">{t("passport")}</label><input name="passport" value={form.passport} onChange={handleChange} className="input-primary" placeholder={t("passportPlaceholder")} /></div>
             )}
 
-            {/* FIX: Block past dates for check-in */}
+            {/* Block past dates for check-in */}
             <div>
               <label className="label-primary">{t("checkIn")}</label>
               <input
@@ -370,7 +369,7 @@ export default function RoomBoard() {
               {isWalkIn && <p className="text-xs text-gray-400 mt-1">{t("walkInCheckInNote")}</p>}
             </div>
 
-            {/* FIX: Auto set checkout to 12:00 PM */}
+            {/* Auto set checkout to 12:00 PM */}
             <div>
               <label className="label-primary">{t("checkOut")}</label>
               <input
@@ -388,7 +387,7 @@ export default function RoomBoard() {
             <div><label className="label-primary">{t("adults")}</label><input type="number" name="adults" value={form.adults} onChange={handleChange} className="input-primary" /></div>
             <div><label className="label-primary">{t("children")}</label><input type="number" name="children" value={form.children} onChange={handleChange} className="input-primary" /></div>
 
-            {/* FIX: Extra bed only for Superior and above */}
+            {/*  Extra bed only for Superior and above */}
             {canAddExtraBed(selectedRoom) ? (
               <div><label className="label-primary">{t("extraBeds")}</label><input type="number" name="extraBeds" value={form.extraBeds} onChange={handleChange} className="input-primary" /></div>
             ) : (
