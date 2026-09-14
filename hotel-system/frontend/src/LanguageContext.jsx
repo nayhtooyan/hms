@@ -422,8 +422,8 @@ const translations = {
     loginFooter: "ဟိုတယ် စီမံခန့်ခွဲမှုစနစ်",
 
     // LAYOUT
-    dashboard: "ဒက်ရှ်ဘုတ်",
-    roomBoard: "အခန်းဘုတ်",
+    dashboard: "အနှစ်ချုပ်",
+    roomBoard: "အခန်းအခြေအနေ",
     rooms: "အခန်းများ",
     reservations: "ကြိုတင်မှာယူမှုများ",
     vouchers: "ဘောက်ချာများ",
@@ -438,7 +438,7 @@ const translations = {
     hotelManagement: "ဟိုတယ် စီမံခန့်ခွဲမှု",
 
     // DASHBOARD
-    dashboardTitle: "ဒက်ရှ်ဘုတ်",
+    dashboardTitle: "အနှစ်ချုပ်",
     dashboardSubtitle:"ပြန်လည်ကြိုဆိုပါတယ်။ ယနေ့ ဟိုတယ်၏ လုပ်ငန်းအခြေအနေများကို ဤနေရာတွင် ကြည့်ရှုနိုင်ပါသည်။",
     todayRevenue: "ယနေ့ ဝင်ငွေ",
     monthlyRevenue: "လစဉ် ဝင်ငွေ",
@@ -513,7 +513,7 @@ const translations = {
     familyRoomType: "Family Room",
 
     // ROOM BOARD
-    roomBoardTitle: "အခန်းဘုတ်",
+    roomBoardTitle: "အခန်းအခြေအနေ",
     roomBoardSubtitle: "ထပ်အလိုက် အခန်းအခြေအနေများကို တစ်နေရာတည်းတွင် ကြည့်ရှုနိုင်ပါသည်။",
     reserve: "ကြိုတင်မှာယူရန်",
     walkIn: "Walk-In",
