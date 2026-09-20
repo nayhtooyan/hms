@@ -385,6 +385,21 @@ const translations = {
     allUsers: "All",
     allEntities: "All",
     noActivities: "No activities found.",
+    field: "Field",
+    changes: "Changes",
+    fieldsChanged: "field(s) changed",
+    newRecordCreated: "New record created",
+    recordDeleted: "Record deleted",
+    noVisibleChanges: "No visible field changes (system metadata only)",
+    viewRaw: "View Raw Data",
+    hideRaw: "Hide Raw Data",
+    none: "None",
+    amenities: "Amenities",
+    extraPersonPrice: "Extra Person Price",
+    source: "Source",
+    actualCheckIn: "Actual Check-In",
+    actualCheckOut: "Actual Check-Out",
+    taxAmount: "Tax Amount"
   },
 
   my: {
@@ -771,6 +786,21 @@ const translations = {
     allUsers: "အားလုံး",
     allEntities: "အားလုံး",
     noActivities: "လုပ်ဆောင်ချက်များ မတွေ့ပါ။",
+    field: "အချက်",
+    changes: "ပြောင်းလဲမှုများ",
+    fieldsChanged: "ခု ပြောင်းလဲပြီး",
+    newRecordCreated: "မှတ်တမ်းအသစ် ဖန်တီးပြီး",
+    recordDeleted: "မှတ်တမ်း ဖျက်ပြီး",
+    noVisibleChanges: "မြင်နိုင်သော ပြောင်းလဲမှု မရှိပါ (စနစ် metadata သာ)",
+    viewRaw: "မူရင်းဒေတာ ကြည့်ရန်",
+    hideRaw: "မူရင်းဒေတာ ဖျောက်ရန်",
+    none: "မရှိပါ",
+    amenities: "ဝန်ဆောင်မှု ပစ္စည်းများ",
+    extraPersonPrice: "အပိုဧည့်သည် စျေးနှုန်း",
+    source: "ရင်းမြစ်",
+    actualCheckIn: "အမှန်တကယ် Check In",
+    actualCheckOut: "အမှန်တကယ် Check Out",
+    taxAmount: "အခွန် ပမာဏ"
   },
 };
 

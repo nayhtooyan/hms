@@ -1,41 +1,22 @@
 const router = require("express").Router();
 
 const {
-  getPayments,
-  getPaymentsByReservation,
   createPayment,
-  getInvoiceData
+  getPayments,
+  getInvoice
 } = require("../controllers/payment.controller");
 
-const {
-  authenticate,
-  requirePermission
-} = require("../middleware/auth");
+const { authenticate, requirePermission } = require("../middleware/auth");
 
 router.use(authenticate);
 
-router.get(
-  "/",
-  requirePermission("payments.view"),
-  getPayments
-);
+// List all payments
+router.get("/", requirePermission("payments.view"), getPayments);
 
-router.get(
-  "/invoice/:reservationId",
-  requirePermission("payments.view"),
-  getInvoiceData
-);
+// Invoice for a reservation
+router.get("/invoice/:reservationId", requirePermission("payments.view"), getInvoice);
 
-router.get(
-  "/reservation/:reservationId",
-  requirePermission("payments.view"),
-  getPaymentsByReservation
-);
-
-router.post(
-  "/",
-  requirePermission("payments.create"),
-  createPayment
-);
+// Record a payment
+router.post("/", requirePermission("payments.create"), createPayment);
 
 module.exports = router;

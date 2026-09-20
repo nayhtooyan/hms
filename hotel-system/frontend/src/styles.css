@@ -38,10 +38,6 @@ body {
   background: #64748b;
 }
 
-/* =========================================
-   UTILITY CLASSES - DARK THEME
-   ========================================= */
-
 @layer components {
   /* Primary Button */
   .btn-primary {
@@ -242,9 +238,6 @@ body {
   }
 }
 
-/* =========================================
-   ANIMATIONS
-   ========================================= */
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out;
@@ -273,7 +266,7 @@ body {
   50% { opacity: 0.5; }
 }
 
-/* Glow utilities (used in inline styles and direct classes) */
+/* Glow utilities*/
 .shadow-glow {
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
 }
@@ -295,5 +288,80 @@ body {
     background: white !important;
     border-color: #e5e7eb !important;
     box-shadow: none !important;
+  }
+}
+
+
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body * {
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  aside, header, nav, .no-print {
+    display: none !important;
+  }
+
+  .min-h-screen, .min-h-\[100vh\] {
+    min-height: 0 !important;
+    height: auto !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+
+  .invoice-container {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .invoice-container, .invoice-container * {
+    color: #000000 !important;
+  }
+
+  .invoice-header {
+    background: #ffffff !important;
+    border-bottom: 2px solid #000000 !important;
+  }
+
+  .invoice-container { font-size: 12px; }
+  .invoice-container table { font-size: 12px; }
+  .invoice-container th { font-size: 10px; }
+  .invoice-container .print-fine { font-size: 10px; }
+
+  .invoice-container table, .invoice-container th, .invoice-container td {
+    border-color: #000000 !important;
+  }
+  .invoice-container .print-box {
+    border: 1px solid #000000 !important;
+    border-radius: 4px;
+  }
+  .invoice-container .print-banner {
+    border: 1.5px solid #000000 !important;
+    background: #ffffff !important;
+  }
+
+  .invoice-container tr,
+  .invoice-container .print-box {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 }
