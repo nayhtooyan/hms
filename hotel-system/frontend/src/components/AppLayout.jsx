@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { useLanguage } from "../LanguageContext";
 import { useSettings } from "../SettingsContext";
+import { assetUrl } from "../utils/assetUrl";
 import {
   LayoutDashboard, BedDouble, Home, CalendarCheck, Ticket, CreditCard,
   Users, Settings, FolderCode, Menu, X, LogOut, ChevronDown,
@@ -35,6 +36,18 @@ export default function AppLayout() {
     setSidebarOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (settings?.logoUrl) {
+        let link = document.querySelector("link[rel='icon']");
+        if (!link) {
+          link = document.createElement("link");
+          link.rel = "icon";
+          document.head.appendChild(link);
+        }
+        link.href = assetUrl(settings.logoUrl);
+      }
+    }, [settings?.logoUrl]);
+
   const role = user?.role || "reception";
   const visibleNavItems = navItems.filter((item) => role === "admin" || item.roles.includes(role));
 
@@ -64,9 +77,17 @@ export default function AppLayout() {
         <div className="relative flex flex-col h-full">
           {/* Brand */}
           <div className="h-20 flex items-center gap-3 px-6 border-b border-gray-800/50">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-glow">
-              <BedDouble className="w-6 h-6" />
-            </div>
+            {settings?.logoUrl ? (
+              <img
+                src={assetUrl(settings.logoUrl)}
+                alt="logo"
+                className="w-10 h-10 rounded-xl object-contain bg-white/90 p-1 shadow-glow"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-glow">
+                <BedDouble className="w-6 h-6" />
+              </div>
+            )}
             <div>
               <span className="text-lg font-bold text-white tracking-tight block">
                 {settings?.hotelName || t("hotelManagement")}

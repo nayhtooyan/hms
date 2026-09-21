@@ -1,90 +1,75 @@
-const Setting = require("../models/Setting");
-
+const fs = require("fs");
+const path = require("path");
+const Settings = require("../models/Setting");
 const asyncHandler = require("../utils/asyncHandler");
 
-const SETTINGS_KEY = "hotel_settings";
-
-const defaultSettings = {
-  hotelName: "Hotel Management System",
-  language: "en",
-  currency: "USD",
-  currencySymbol: "$",
-  timezone: "Auto",
-  checkInTime: "14:00",
-  checkOutTime: "12:00",
-  taxRate: 0,
-  overtimeGraceMinutes: 30,
-  invoiceFooter: "Thank you for staying with us.",
-  contactEmail: "",
-  contactPhone: "",
-  address: ""
-};
+const UPLOADS_DIR = path.join(__dirname, "../../uploads");
 
 const getSettings = asyncHandler(async (req, res) => {
-  let settingsDoc = await Setting.findOne({
-    key: SETTINGS_KEY
-  });
-
-  if (!settingsDoc) {
-    settingsDoc = await Setting.create({
-      key: SETTINGS_KEY,
-      value: defaultSettings
-    });
+  let settings = await Settings.findOne();
+  if (!settings) {
+    settings = await Settings.create({});
   }
-
-  res.json({
-    ...defaultSettings,
-    ...settingsDoc.value
-  });
+  res.json(settings);
 });
 
 const updateSettings = asyncHandler(async (req, res) => {
-  const allowedFields = Object.keys(defaultSettings);
+  let settings = await Settings.findOne();
+  if (!settings) settings = new Settings();
 
-  const updates = {};
+  const allowed = [
+    "hotelName", "language", "currency", "currencySymbol", "timezone",
+    "checkInTime", "checkOutTime", "taxRate", "overtimeGraceMinutes",
+    "invoiceFooter", "contactEmail", "contactPhone", "address"
+  ];
 
-  for (const field of allowedFields) {
-    if (req.body[field] !== undefined) {
-      updates[field] = req.body[field];
-    }
-  }
-
-  if (updates.taxRate !== undefined) {
-    updates.taxRate = Number(updates.taxRate || 0);
-  }
-
-  if (updates.overtimeGraceMinutes !== undefined) {
-    updates.overtimeGraceMinutes = Number(
-      updates.overtimeGraceMinutes || 0
-    );
-  }
-
-  let settingsDoc = await Setting.findOne({
-    key: SETTINGS_KEY
+  allowed.forEach((key) => {
+    if (req.body[key] !== undefined) settings[key] = req.body[key];
   });
 
-  if (!settingsDoc) {
-    settingsDoc = new Setting({
-      key: SETTINGS_KEY,
-      value: defaultSettings
-    });
+  await settings.save();
+  res.json(settings);
+});
+
+/* ===== UPLOAD LOGO ===== */
+const uploadLogo = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No image file provided" });
   }
 
-  settingsDoc.value = {
-    ...defaultSettings,
-    ...settingsDoc.value,
-    ...updates
-  };
+  let settings = await Settings.findOne();
+  if (!settings) settings = new Settings();
 
-  await settingsDoc.save();
+  // Delete old logo file if exists
+  if (settings.logoUrl) {
+    const oldPath = path.join(UPLOADS_DIR, path.basename(settings.logoUrl));
+    fs.unlink(oldPath, () => {});
+  }
 
-  res.json({
-    ...defaultSettings,
-    ...settingsDoc.value
-  });
+  settings.logoUrl = `/uploads/${req.file.filename}`;
+  await settings.save();
+
+  res.json(settings);
+});
+
+/* ===== REMOVE LOGO ===== */
+const removeLogo = asyncHandler(async (req, res) => {
+  const settings = await Settings.findOne();
+  if (!settings) return res.json({});
+
+  if (settings.logoUrl) {
+    const oldPath = path.join(UPLOADS_DIR, path.basename(settings.logoUrl));
+    fs.unlink(oldPath, () => {});
+    settings.logoUrl = "";
+    await settings.save();
+  }
+
+  res.json(settings);
 });
 
 module.exports = {
   getSettings,
-  updateSettings
+  updateSettings,
+  uploadLogo,
+  removeLogo
 };

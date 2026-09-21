@@ -311,6 +311,12 @@ const translations = {
     english: "English",
     myanmar: "Myanmar",
     autoBrowser: "Auto (Browser)",
+    hotelLogo: "Hotel Logo",
+    uploadLogo: "Upload Logo",
+    removeLogo: "Remove Logo",
+    logoHint: "PNG, JPG or WEBP • Max 2 MB • Transparent background recommended",
+    logoUpdated: "Logo updated successfully",
+    logoRemoved: "Logo removed",
 
     // REPORTS
     reportsTitle: "Reports & Analytics",
@@ -712,6 +718,12 @@ const translations = {
     english: "English",
     myanmar: "မြန်မာ",
     autoBrowser: "အလိုအလျောက် (Browser)",
+    hotelLogo: "ဟိုတယ် လိုဂို",
+    uploadLogo: "လိုဂို တင်ရန်",
+    removeLogo: "လိုဂို ဖယ်ရှားရန်",
+    logoHint: "PNG, JPG သို့မဟုတ် WEBP • အများဆုံး 2 MB • နောက်ခံအလွတ် ထားရန် အကြံပြုသည်",
+    logoUpdated: "လိုဂို အသစ်ပြင်ဆင်ပြီးပါပြီ",
+    logoRemoved: "လိုဂို ဖယ်ရှားပြီးပါပြီ",
 
     // REPORTS
     reportsTitle: "အစီရင်ခံစာများနှင့် ခွဲခြမ်းစိတ်ဖြာမှု",

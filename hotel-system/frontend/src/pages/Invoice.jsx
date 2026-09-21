@@ -4,6 +4,8 @@ import api from "../api";
 import { useSettings } from "../SettingsContext";
 import { useLanguage } from "../LanguageContext";
 import { Printer, ArrowLeft } from "lucide-react";
+import { assetUrl } from "../utils/assetUrl";
+
 
 export default function Invoice() {
   const { reservationId } = useParams();
@@ -114,6 +116,13 @@ export default function Invoice() {
         <div className="invoice-header bg-gradient-to-r from-purple-900 to-indigo-900 text-white px-8 py-5">
           <div className="flex justify-between items-start gap-6">
             <div className="flex-1">
+              {settings?.logoUrl && (
+                <img
+                  src={assetUrl(settings.logoUrl)}
+                  alt="logo"
+                  className="h-14 w-auto object-contain mb-2"
+                />
+              )}
               <h1 className="text-2xl font-bold mb-1">{settings?.hotelName || "Hotel Name"}</h1>
               <div className="text-xs opacity-90 space-y-0.5">
                 {settings?.address && <p>{settings.address}</p>}
