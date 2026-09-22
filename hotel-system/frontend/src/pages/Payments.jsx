@@ -8,6 +8,7 @@ import Modal from "../components/Modal";
 import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
 import { Search, CreditCard, FileText } from "lucide-react";
 
+
 export default function Payments() {
   const { formatMoney, formatDateTime } = useSettings();
   const { addToast } = useToast();

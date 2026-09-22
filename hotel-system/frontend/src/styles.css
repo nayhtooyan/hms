@@ -365,3 +365,28 @@ body {
     break-inside: avoid;
   }
 }
+
+/* INVOICE OVERLAY - PRINT ISOLATION */
+@media print {
+  body.invoice-overlay-open aside,
+  body.invoice-overlay-open header,
+  body.invoice-overlay-open nav {
+    display: none !important;
+  }
+
+  body.invoice-overlay-open .roomboard-root > *:not(.invoice-overlay-backdrop) {
+    display: none !important;
+  }
+
+  body.invoice-overlay-open .invoice-overlay-backdrop {
+    position: static !important;
+    overflow: visible !important;
+    background: white !important;
+    backdrop-filter: none !important;
+  }
+
+  body.invoice-overlay-open .invoice-overlay-scroll {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+}

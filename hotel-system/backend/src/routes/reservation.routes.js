@@ -6,7 +6,8 @@ const {
   createReservation,
   checkInReservation,
   checkOutReservation,
-  cancelReservation
+  cancelReservation,
+  extendReservation
 } = require("../controllers/reservation.controller");
 
 const {
@@ -51,5 +52,10 @@ router.post(
   requirePermission("reservations.cancel"),
   cancelReservation
 );
+
+router.post(
+  "/:id/extend", 
+  requirePermission("reservations.checkin"), 
+  extendReservation);
 
 module.exports = router;

@@ -1,8 +1,9 @@
 const { emitEvent } = require("../utils/socketEmit");
 const Reservation = require("../models/Reservation");
 const Room = require("../models/Room");
-const Voucher = require("../models/Voucher"); // Added for voucher support
+const Voucher = require("../models/Voucher"); 
 const HousekeepingTask = require("../models/HousekeepingTask");
+const Setting = require("../models/Setting");
 
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -338,11 +339,82 @@ const cancelReservation = asyncHandler(async (req, res) => {
   res.json(populated);
 });
 
+//EXTEND STAY 
+const extendReservation = asyncHandler(async (req, res) => {
+  const { additionalNights, newCheckOut } = req.body;
+
+  const reservation = await Reservation.findById(req.params.id).populate("roomId");
+  if (!reservation) {
+    return res.status(404).json({ message: "Reservation not found" });
+  }
+  if (reservation.status !== "checked_in") {
+    return res.status(400).json({ message: "Only checked-in reservations can be extended" });
+  }
+
+  const room = reservation.roomId;
+
+  // Determine new check-out
+  let newOut;
+  if (newCheckOut) {
+    newOut = new Date(newCheckOut);
+  } else if (additionalNights) {
+    newOut = new Date(reservation.scheduledCheckOut);
+    newOut.setDate(newOut.getDate() + Number(additionalNights));
+  } else {
+    return res.status(400).json({ message: "additionalNights or newCheckOut is required" });
+  }
+
+  // Hotel rule: check-out is always 12:00 PM
+  newOut.setHours(12, 0, 0, 0);
+
+  if (newOut.getTime() <= new Date(reservation.scheduledCheckOut).getTime()) {
+    return res.status(400).json({ message: "New check-out must be later than current check-out" });
+  }
+
+  // Recalculate charges
+  const nights = Math.max(1, Math.ceil((newOut - new Date(reservation.scheduledCheckIn)) / 86400000));
+  const ps = reservation.priceSnapshot || {};
+
+  const roomCharge = nights * Number(room.basePrice || 0);
+  const extraBedCharge = nights * Number(reservation.extraBeds || 0) * Number(room.extraBedPrice || 0);
+  const extraPersonCharge = Number(ps.extraPersonCharge || 0);
+  const overtimeCharge = Number(ps.overtimeCharge || 0);
+  const voucherDiscount = Number(ps.voucherDiscount || 0); // discount stays as originally given
+
+  const subtotal = roomCharge + extraBedCharge + extraPersonCharge + overtimeCharge - voucherDiscount;
+
+  const settings = await Setting.findOne();
+  const taxRate = Number(settings?.taxRate || 0);
+  const taxAmount = taxRate > 0 ? Math.round((subtotal * taxRate) / 100) : 0;
+  const total = subtotal + taxAmount;
+
+  reservation.scheduledCheckOut = newOut;
+  reservation.priceSnapshot = {
+    ...ps,
+    nights,
+    roomCharge,
+    extraBedCharge,
+    extraPersonCharge,
+    overtimeCharge,
+    voucherDiscount,
+    taxAmount,
+    total
+  };
+  await reservation.save();
+
+  emitEvent(req, "reservations:updated", { action: "extended", reservationId: reservation._id });
+  emitEvent(req, "dashboard:updated", { action: "data_changed" });
+
+  const populated = await Reservation.findById(reservation._id).populate("roomId", "roomNumber roomType");
+  res.json(populated);
+});
+
 module.exports = {
   getReservations,
   getReservation,
   createReservation,
   checkInReservation,
   checkOutReservation,
-  cancelReservation
+  cancelReservation,
+  extendReservation
 };
