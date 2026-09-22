@@ -462,7 +462,7 @@ const translations = {
     payments: "ငွေပေးချေမှုများ",
     housekeeping: "အခန်းသန့်ရှင်းရေး",
     reports: "အစီရင်ခံစာများ",
-    backups: "အရန်သိမ်းမှုများ",
+    backups: "အရန်သိမ်းဆည်းမှုများ",
     auditLogs: "စစ်ဆေးမှုမှတ်တမ်းများ",
     users: "အသုံးပြုသူများ",
     settings: "ဆက်တင်များ",

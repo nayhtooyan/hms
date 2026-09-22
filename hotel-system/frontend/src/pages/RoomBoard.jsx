@@ -1,17 +1,22 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import api from "../api";
 import { useSettings } from "../SettingsContext";
 import { useToast } from "../components/ToastContext";
 import { useLanguage } from "../LanguageContext";
 import Modal from "../components/Modal";
 import InvoiceOverlay from "../components/InvoiceOverlay";
-
 import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
-import {
-  BedDouble, RefreshCw, Users, XCircle, Ticket, X, Clock,
-  Plus, CreditCard, FileText, LogOut, Loader2
-} from "lucide-react";
+
+const statusConfig = {
+  available: { strip: "bg-emerald-500", tint: "bg-emerald-500/10", border: "border-emerald-500/40", text: "text-emerald-300" },
+  occupied: { strip: "bg-red-500", tint: "bg-red-500/10", border: "border-red-500/40", text: "text-red-300" },
+  reserved: { strip: "bg-blue-500", tint: "bg-blue-500/10", border: "border-blue-500/40", text: "text-blue-300" },
+  cleaning: { strip: "bg-amber-500", tint: "bg-amber-500/10", border: "border-amber-500/40", text: "text-amber-300" },
+  maintenance: { strip: "bg-orange-500", tint: "bg-orange-500/10", border: "border-orange-500/40", text: "text-orange-300" },
+  blocked: { strip: "bg-gray-500", tint: "bg-gray-500/10", border: "border-gray-500/40", text: "text-gray-400" },
+};
+
+const statusOrder = ["available", "cleaning", "maintenance", "blocked"];
 
 export default function RoomBoard() {
   const { formatMoney, formatDateTime } = useSettings();
@@ -36,7 +41,10 @@ export default function RoomBoard() {
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherMessage, setVoucherMessage] = useState("");
 
-  // Occupied room drawer
+  // Action sheet (non-occupied tiles)
+  const [sheetRoom, setSheetRoom] = useState(null);
+
+  // Occupied drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeRes, setActiveRes] = useState(null);
   const [folio, setFolio] = useState(null);
@@ -48,7 +56,6 @@ export default function RoomBoard() {
   const [payForm, setPayForm] = useState({ amount: "", method: "cash", reference: "", note: "" });
   const [paying, setPaying] = useState(false);
   const [invoiceFor, setInvoiceFor] = useState(null);
-  
 
   const nowForMin = new Date();
   const minDateTime = new Date(nowForMin.getTime() - nowForMin.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -88,7 +95,7 @@ export default function RoomBoard() {
   useEffect(() => { loadAll(); }, []);
   useRealTimeRefresh(loadAll, ["rooms:updated", "reservations:updated", "payments:updated", "housekeeping:updated"]);
 
-  /*  Reserve / Walk-in  */
+  /*  status / reserve / walk-in  */
   const updateStatus = async (roomId, status) => {
     try {
       await api.patch(`/rooms/${roomId}/status`, { status });
@@ -162,7 +169,7 @@ export default function RoomBoard() {
     }
   };
 
-  /*  Occupied room drawer  */
+  /*  occupied drawer  */
   const openOccupied = (room) => {
     const res = reservations.find(r => r.status === "checked_in" && String(r.roomId?._id || r.roomId) === String(room._id));
     setActiveRes(res || null);
@@ -180,7 +187,6 @@ export default function RoomBoard() {
     setFolio(null);
   };
 
-  // Extend preview calculation
   const extendPreview = () => {
     if (!activeRes) return null;
     const checkIn = new Date(activeRes.scheduledCheckIn);
@@ -193,7 +199,7 @@ export default function RoomBoard() {
     const newNights = Math.max(1, Math.ceil((targetOut - checkIn) / 86400000));
     const room = rooms.find(r => String(r._id) === String(activeRes.roomId?._id || activeRes.roomId));
     const nightly = Number(room?.basePrice || 0) + Number(activeRes.extraBeds || 0) * Number(room?.extraBedPrice || 0);
-    return { targetOut, addedNights: newNights - currentNights, addedAmount: (newNights - currentNights) * nightly };
+    return { addedNights: newNights - currentNights, addedAmount: (newNights - currentNights) * nightly };
   };
 
   const confirmExtend = async () => {
@@ -217,18 +223,24 @@ export default function RoomBoard() {
   };
 
   const openPayForm = () => {
-    setPayForm({ amount: folio && folio.balance > 0 ? folio.balance : "", method: "cash", reference: "", note: "" });
+    const bal = folio?.balance || 0;
+    setPayForm({ amount: bal > 0 ? bal : "", method: "cash", reference: "", note: "" });
     setShowPay(true);
   };
 
   const submitPayment = async (e) => {
     e.preventDefault();
     if (!activeRes) return;
+    const amt = Number(payForm.amount);
+    if (!amt || amt <= 0) {
+      addToast(t("invalidAmount"), "error");
+      return;
+    }
     try {
       setPaying(true);
       await api.post("/payments", {
         reservationId: activeRes._id,
-        amount: Number(payForm.amount),
+        amount: amt,
         method: payForm.method,
         reference: payForm.reference,
         note: payForm.note,
@@ -236,7 +248,7 @@ export default function RoomBoard() {
       addToast(t("paymentRecorded"));
       setShowPay(false);
       await loadAll();
-      loadFolio(activeRes._id);
+      await loadFolio(activeRes._id);
     } catch (err) {
       addToast(err.response?.data?.message || t("error"), "error");
     } finally {
@@ -264,18 +276,14 @@ export default function RoomBoard() {
     return `${h}h ${m}m`;
   };
 
-  /*  Board rendering  */
+  const onTileClick = (room) => {
+    if (room.status === "occupied") openOccupied(room);
+    else setSheetRoom(room);
+  };
+
+  /*  derived  */
   const selectedRoom = rooms.find(r => r._id === form.roomId);
   const totalGuests = Number(form.adults || 0) + Number(form.children || 0);
-
-  const statusConfig = {
-    available: { bg: "from-emerald-500/20 to-emerald-600/10", border: "border-emerald-500/40", text: "text-emerald-300", badge: "bg-emerald-500" },
-    occupied: { bg: "from-red-500/20 to-red-600/10", border: "border-red-500/40", text: "text-red-300", badge: "bg-red-500" },
-    reserved: { bg: "from-blue-500/20 to-blue-600/10", border: "border-blue-500/40", text: "text-blue-300", badge: "bg-blue-500" },
-    cleaning: { bg: "from-amber-500/20 to-amber-600/10", border: "border-amber-500/40", text: "text-amber-300", badge: "bg-amber-500" },
-    maintenance: { bg: "from-orange-500/20 to-orange-600/10", border: "border-orange-500/40", text: "text-orange-300", badge: "bg-orange-500" },
-    blocked: { bg: "from-gray-500/20 to-gray-600/10", border: "border-gray-500/40", text: "text-gray-400", badge: "bg-gray-500" },
-  };
 
   const filteredRooms = filter === "all" ? rooms : rooms.filter(r => r.status === filter);
   const floors = filteredRooms.reduce((acc, room) => { const floor = room.floor || 1; if (!acc[floor]) acc[floor] = []; acc[floor].push(room); return acc; }, {});
@@ -293,79 +301,79 @@ export default function RoomBoard() {
   const guest = folio?.reservation?.guest || activeRes?.guest || {};
   const folioRoom = folio?.reservation?.roomId || activeRes?.roomId || {};
   const ps = folio?.reservation?.priceSnapshot || {};
+  const activeRoomId = activeRes?.roomId?._id || activeRes?.roomId;
 
   if (loading) {
-    return <div className="flex items-center justify-center py-32 text-purple-400"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+    return (
+      <div className="flex items-center justify-center py-32">
+        <div className="w-10 h-10 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (
-    <div className="roomboard-root space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="roomboard-root space-y-5 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="page-title-dark">{t("roomBoardTitle")}</h1>
           <p className="page-subtitle-dark">{t("roomBoardSubtitle")}</p>
         </div>
-        <button onClick={loadAll} className="btn-secondary flex items-center gap-2">
-          <RefreshCw className="w-4 h-4" /> {t("refresh")}
-        </button>
+        <button onClick={loadAll} className="btn-secondary text-sm py-2">{t("refresh")}</button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {Object.entries(counts).map(([key, count]) => (
-          <button key={key} onClick={() => setFilter(key)} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${filter === key ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-glow" : "bg-gray-800/50 border border-gray-700 text-gray-400 hover:bg-gray-700/50 hover:text-white"}`}>
-            {key === "all" ? t("all") : t(key)} ({count})
-          </button>
-        ))}
+      {/* Filters + legend */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {Object.entries(counts).map(([key, count]) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                filter === key
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-glow"
+                  : "bg-gray-800/60 border border-gray-700 text-gray-400 hover:text-white"
+              }`}
+            >
+              {key === "all" ? t("all") : t(key)} · {count}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          {Object.entries(statusConfig).map(([key, c]) => (
+            <span key={key} className="flex items-center gap-1.5 text-[10px] text-gray-500">
+              <span className={`w-2 h-2 rounded-full ${c.strip}`} /> {t(key)}
+            </span>
+          ))}
+        </div>
       </div>
 
+      {/* Floors + tiles */}
       {sortedFloors.map((floor) => (
-        <div key={floor} className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-glow">
-              <span className="text-white font-extrabold">{floor}</span>
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">{t("floor")} {floor}</h2>
-              <p className="text-xs text-gray-500">{floors[floor].length} {t("roomsText")}</p>
-            </div>
+        <div key={floor} className="space-y-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-purple-300">{t("floor")} {floor}</span>
+            <span className="text-[10px] text-gray-500">{floors[floor].length} {t("roomsText")}</span>
+            <div className="flex-1 h-px bg-gray-800" />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
             {floors[floor].map((room) => {
-              const config = statusConfig[room.status] || statusConfig.blocked;
+              const c = statusConfig[room.status] || statusConfig.blocked;
               return (
                 <div
                   key={room._id}
-                  onClick={() => room.status === "occupied" && openOccupied(room)}
-                  className={`bg-gradient-to-br ${config.bg} ${config.border} border-2 rounded-2xl p-5 hover:shadow-glow transition-all duration-300 group ${room.status === "occupied" ? "cursor-pointer" : ""}`}
+                  onClick={() => onTileClick(room)}
+                  className={`${c.tint} ${c.border} border rounded-xl overflow-hidden cursor-pointer hover:shadow-glow hover:-translate-y-0.5 transition-all duration-200`}
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <BedDouble className={`w-5 h-5 ${config.text}`} />
-                      <span className="text-lg font-extrabold text-white">{room.roomNumber}</span>
+                  <div className={`h-1 ${c.strip}`} />
+                  <div className="p-2.5">
+                    <div className="flex items-baseline justify-between gap-1">
+                      <span className="text-lg font-extrabold text-white leading-none">{room.roomNumber}</span>
+                      <span className={`text-[8px] font-bold uppercase ${c.text}`}>{t(room.status)}</span>
                     </div>
-                    <div className={`w-3 h-3 rounded-full ${config.badge} animate-pulse`} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className={`text-sm font-medium ${config.text}`}>{room.roomType}</p>
-                    <span className="badge-purple flex items-center gap-1"><Users className="w-3 h-3" /> {room.maxGuests || 2}</span>
-                  </div>
-                  <p className="text-sm font-bold text-white mt-2">{formatMoney(room.basePrice)}/{t("night")}</p>
-                  <p className={`text-xs font-bold mt-2 capitalize ${config.text}`}>{t(room.status)}</p>
-
-                  <div className="mt-4 space-y-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                    {room.status === "available" && (
-                      <div className="flex gap-1.5">
-                        <button onClick={() => openReserve(room)} className="flex-1 btn-primary text-xs py-2">{t("reserve")}</button>
-                        <button onClick={() => openWalkIn(room)} className="flex-1 btn-success text-xs py-2">{t("walkIn")}</button>
-                      </div>
-                    )}
-                    <div className="flex flex-wrap gap-1.5">
-                      {room.status !== "available" && <button onClick={() => updateStatus(room._id, "available")} className="px-2.5 py-1 text-xs rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold hover:bg-emerald-500/30">{t("available")}</button>}
-                      {room.status !== "cleaning" && <button onClick={() => updateStatus(room._id, "cleaning")} className="px-2.5 py-1 text-xs rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold hover:bg-amber-500/30">{t("cleaning")}</button>}
-                      {room.status !== "maintenance" && <button onClick={() => updateStatus(room._id, "maintenance")} className="px-2.5 py-1 text-xs rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30 font-semibold hover:bg-orange-500/30">{t("maintenance")}</button>}
-                      {room.status !== "blocked" && <button onClick={() => updateStatus(room._id, "blocked")} className="px-2.5 py-1 text-xs rounded-lg bg-gray-500/20 text-gray-300 border border-gray-500/30 font-semibold hover:bg-gray-500/30">{t("blocked")}</button>}
-                    </div>
+                    <p className="text-[10px] text-gray-400 truncate mt-1">{room.roomType} · {room.maxGuests || 2}P</p>
+                    <p className="text-[10px] font-semibold text-gray-300 truncate">{formatMoney(room.basePrice)}</p>
                   </div>
                 </div>
               );
@@ -374,60 +382,127 @@ export default function RoomBoard() {
         </div>
       ))}
 
-      {/*  OCCUPIED ROOM DRAWER  */}
+      {/*  ACTION SHEET (non-occupied)  */}
+      {sheetRoom && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-backdrop-in"
+            onClick={() => setSheetRoom(null)}
+          />
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none sm:p-4">
+            <div className="action-panel pointer-events-auto w-full sm:max-w-[480px] bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl">
+              {/* Status color strip */}
+              <div className={`h-1.5 ${(statusConfig[sheetRoom.status] || statusConfig.blocked).strip}`} />
+
+              <div className="p-5 sm:p-6 space-y-5">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-2xl font-extrabold text-white leading-none">
+                      {t("room")} {sheetRoom.roomNumber}
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-1.5">
+                      {sheetRoom.roomType} · {sheetRoom.maxGuests || 2}P · {t("floor")} {sheetRoom.floor || 1}
+                    </p>
+                    <p className="text-sm font-bold text-purple-300 mt-1">
+                      {formatMoney(sheetRoom.basePrice)} / {t("night")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSheetRoom(null)}
+                    className="px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm font-bold"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Primary actions */}
+                {sheetRoom.status === "available" && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => { openReserve(sheetRoom); setSheetRoom(null); }}
+                      className="btn-primary py-3.5 text-sm font-bold"
+                    >
+                      {t("reserve")}
+                    </button>
+                    <button
+                      onClick={() => { openWalkIn(sheetRoom); setSheetRoom(null); }}
+                      className="btn-success py-3.5 text-sm font-bold"
+                    >
+                      {t("walkIn")}
+                    </button>
+                  </div>
+                )}
+
+                {/* Status changes */}
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-gray-500 mb-2">{t("changeStatus")}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {statusOrder.filter(s => s !== sheetRoom.status).map((s) => {
+                      const sc = statusConfig[s];
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => { updateStatus(sheetRoom._id, s); setSheetRoom(null); }}
+                          className={`px-4 py-2.5 text-xs rounded-lg font-semibold border ${sc.tint} ${sc.text} ${sc.border}`}
+                        >
+                          {t(s)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/*  OCCUPIED DRAWER  */}
       {drawerOpen && (
         <>
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-fade-in" onClick={closeDrawer} />
           <div className="fixed inset-y-0 right-0 w-full max-w-md bg-gray-900 border-l border-gray-700 z-50 overflow-y-auto animate-slide-up">
-            <div className="p-6 space-y-6">
-              {/* Drawer header */}
+            <div className="p-5 space-y-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-extrabold text-white">
-                    {t("room")} {folioRoom.roomNumber || activeRes?.roomId?.roomNumber || "-"}
-                  </h2>
+                  <h2 className="text-xl font-extrabold text-white">{t("room")} {folioRoom.roomNumber || activeRes?.roomId?.roomNumber || "-"}</h2>
                   <p className="text-xs text-gray-500">{folioRoom.roomType || activeRes?.roomId?.roomType || ""}</p>
                 </div>
-                <button onClick={closeDrawer} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
-                  <X className="w-5 h-5" />
-                </button>
+                <button onClick={closeDrawer} className="px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm font-bold">×</button>
               </div>
 
               {!activeRes ? (
                 <div className="alert-dark-warning">{t("noActiveReservation")}</div>
               ) : folioLoading ? (
-                <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-purple-400" /></div>
+                <div className="flex justify-center py-16">
+                  <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+                </div>
               ) : (
                 <>
-                  {/* Guest info */}
+                  {/* Guest */}
                   <div className="card-dark p-4">
                     <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">{t("guestInformation")}</h3>
                     <p className="text-base font-bold text-white">{guest.name || "-"}</p>
                     <div className="mt-1.5 text-xs text-gray-400 space-y-1">
                       {guest.phone && <p>{t("guestPhone")}: {guest.phone}</p>}
-                      <p>
-                        <strong>{guest.guestType === "foreigner" ? t("passport") : t("nrc")}:</strong>{" "}
-                        {guest.guestType === "foreigner" ? guest.passport : guest.nrc}
-                      </p>
-                      <p>{t("guests")}: {folio?.reservation?.adults ?? activeRes?.adults ?? 0} {t("adults")} • {folio?.reservation?.children ?? activeRes?.children ?? 0} {t("children")} • {folio?.reservation?.extraBeds ?? activeRes?.extraBeds ?? 0} {t("extraBeds")}</p>
+                      <p><strong>{guest.guestType === "foreigner" ? t("passport") : t("nrc")}:</strong> {guest.guestType === "foreigner" ? guest.passport : guest.nrc}</p>
+                      <p>{folio?.reservation?.adults ?? activeRes?.adults ?? 0} {t("adults")} · {folio?.reservation?.children ?? activeRes?.children ?? 0} {t("children")} · {folio?.reservation?.extraBeds ?? activeRes?.extraBeds ?? 0} {t("extraBeds")}</p>
                     </div>
                   </div>
 
-                  {/* Stay info */}
+                  {/* Stay */}
                   <div className="card-dark p-4">
                     <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">{t("stayDetails")}</h3>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div><p className="text-gray-500">{t("checkIn")}</p><p className="font-bold text-white">{formatDateTime(activeRes.scheduledCheckIn)}</p></div>
                       <div><p className="text-gray-500">{t("checkOut")}</p><p className="font-bold text-white">{formatDateTime(activeRes.scheduledCheckOut)}</p></div>
-                      <div>
-                        <p className="text-gray-500">{t("timeLeft")}</p>
-                        <p className="font-bold text-amber-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {timeLeft(activeRes.scheduledCheckOut)}</p>
-                      </div>
+                      <div><p className="text-gray-500">{t("timeLeft")}</p><p className="font-bold text-amber-400">{timeLeft(activeRes.scheduledCheckOut)}</p></div>
                       <div><p className="text-gray-500">{t("booking")}</p><p className="font-bold text-white">{activeRes.bookingNo}</p></div>
                     </div>
                   </div>
 
-                  {/* Live charges */}
+                  {/* Charges */}
                   <div className="card-dark p-4">
                     <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">{t("charges")}</h3>
                     <div className="space-y-1.5 text-xs">
@@ -445,7 +520,7 @@ export default function RoomBoard() {
                         <p className="text-[10px] font-bold text-gray-500 uppercase mb-1.5">{t("paymentsMade")}</p>
                         {folio.payments.map((p) => (
                           <div key={p._id} className="flex justify-between text-[11px] py-0.5">
-                            <span className="text-gray-400">{p.receiptNo} • {t(p.method)}</span>
+                            <span className="text-gray-400">{p.receiptNo} · {t(p.method)}</span>
                             <span className="text-emerald-400 font-semibold">{formatMoney(p.amount)}</span>
                           </div>
                         ))}
@@ -453,7 +528,7 @@ export default function RoomBoard() {
                     )}
                   </div>
 
-                  {/* Extend stay */}
+                  {/* Extend */}
                   <div className="card-dark p-4">
                     <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">{t("extendStay")}</h3>
                     <div className="flex gap-2 mb-3">
@@ -482,28 +557,42 @@ export default function RoomBoard() {
                         {t("addsAmount")}: <strong>+{formatMoney(extendPreview().addedAmount)}</strong> ({extendPreview().addedNights} {t("nights")})
                       </div>
                     )}
-                    <button onClick={confirmExtend} disabled={extending || !extendPreview()} className="btn-primary w-full flex items-center justify-center gap-2">
-                      <Plus className="w-4 h-4" /> {extending ? t("loading") : t("confirmExtension")}
+                    <button onClick={confirmExtend} disabled={extending || !extendPreview()} className="btn-primary w-full">
+                      {extending ? t("loading") : t("confirmExtension")}
                     </button>
+                  </div>
+
+                  {/* Change status (moved here for occupied rooms) */}
+                  <div className="card-dark p-4">
+                    <p className="text-[10px] uppercase font-bold text-gray-500 mb-2">{t("changeStatus")}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {statusOrder.map((s) => {
+                        const sc = statusConfig[s];
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => updateStatus(activeRoomId, s)}
+                            className={`px-3 py-1.5 text-xs rounded-lg font-semibold border ${sc.tint} ${sc.text} ${sc.border}`}
+                          >
+                            {t(s)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Actions */}
                   <div className="grid grid-cols-1 gap-2">
-                    <button onClick={openPayForm} className="btn-success flex items-center justify-center gap-2">
-                      <CreditCard className="w-4 h-4" /> {t("recordPayment")}
-                    </button>
-                    <button onClick={() => setInvoiceFor(activeRes._id)} className="btn-secondary flex items-center justify-center gap-2">
-                      <FileText className="w-4 h-4" /> {t("viewInvoice")}
-                    </button>
-                    <button onClick={doCheckOut} className="btn-danger flex items-center justify-center gap-2">
-                      <LogOut className="w-4 h-4" /> {t("checkOut")}
-                    </button>
+                    <button onClick={openPayForm} className="btn-success">{t("recordPayment")}</button>
+                    <button onClick={() => setInvoiceFor(activeRes._id)} className="btn-secondary">{t("viewInvoice")}</button>
+                    <button onClick={doCheckOut} className="btn-danger">{t("checkOut")}</button>
                   </div>
 
                   {/* Payment form */}
                   {showPay && (
                     <form onSubmit={submitPayment} className="card-dark p-4 space-y-4">
                       <h3 className="text-sm font-bold text-white">{t("recordPayment")}</h3>
+                      {(folio?.balance || 0) <= 0 && <div className="alert-dark-info">{t("noBalanceDue")}</div>}
                       <div>
                         <label className="label-dark">{t("amount")}</label>
                         <input type="number" value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} required className="input-dark" />
@@ -540,7 +629,7 @@ export default function RoomBoard() {
           {isWalkIn && <div className="alert-dark-success">{t("walkInMode")}</div>}
           <div className="p-4 rounded-xl bg-gray-800/50 border border-gray-700/50">
             <p className="font-bold text-white">{t("room")} {selectedRoom?.roomNumber} - {selectedRoom?.roomType}</p>
-            <p className="text-sm text-gray-400">{formatMoney(selectedRoom?.basePrice || 0)}/{t("night")} • {t("floor")} {selectedRoom?.floor || 1} • {t("capacityLabel")}: {selectedRoom?.maxGuests || 2}</p>
+            <p className="text-sm text-gray-400">{formatMoney(selectedRoom?.basePrice || 0)}/{t("night")} · {t("floor")} {selectedRoom?.floor || 1} · {t("capacityLabel")}: {selectedRoom?.maxGuests || 2}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -568,7 +657,7 @@ export default function RoomBoard() {
             <div><label className="label-dark">{t("children")}</label><input type="number" name="children" value={form.children} onChange={handleChange} className="input-dark" /></div>
 
             {canAddExtraBed(selectedRoom) && <div><label className="label-dark">{t("extraBeds")}</label><input type="number" name="extraBeds" value={form.extraBeds} onChange={handleChange} className="input-dark" /></div>}
-            {selectedRoom && !canAddExtraBed(selectedRoom) && <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-800/50 border border-gray-700/50 text-gray-500 text-sm"><XCircle className="w-4 h-4" /> {t("extraBeds")}: N/A</div>}
+            {selectedRoom && !canAddExtraBed(selectedRoom) && <div className="p-3 rounded-xl bg-gray-800/50 border border-gray-700/50 text-gray-500 text-sm">{t("extraBeds")}: N/A</div>}
 
             {selectedRoom && totalGuests > (selectedRoom?.maxGuests || 2) && <div className="sm:col-span-2 alert-dark-warning">{t("capacityWarning")}</div>}
 
@@ -576,7 +665,7 @@ export default function RoomBoard() {
               <label className="label-dark">{t("voucherCode")}</label>
               <div className="flex gap-2">
                 <input value={voucherCode} onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setAppliedVoucher(null); setVoucherMessage(""); }} className="input-dark" placeholder={t("enterCode")} />
-                <button type="button" onClick={validateVoucher} className="btn-secondary whitespace-nowrap"><Ticket className="w-4 h-4" /></button>
+                <button type="button" onClick={validateVoucher} className="btn-secondary whitespace-nowrap">{t("checkVoucher")}</button>
               </div>
               {voucherMessage && <p className={`text-xs mt-2 font-medium ${appliedVoucher ? "text-emerald-400" : "text-red-400"}`}>{voucherMessage}</p>}
             </div>
@@ -588,6 +677,8 @@ export default function RoomBoard() {
           </div>
         </form>
       </Modal>
+
+      {/* Invoice overlay */}
       {invoiceFor && (
         <InvoiceOverlay reservationId={invoiceFor} onClose={() => setInvoiceFor(null)} />
       )}

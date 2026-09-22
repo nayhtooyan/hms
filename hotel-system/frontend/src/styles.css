@@ -390,3 +390,67 @@ body {
     padding: 0 !important;
   }
 }
+
+/* PRINT LOCK  */
+@media print {
+  .invoice-container .inv-two-col {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+  }
+
+  .invoice-container .inv-header-row {
+    flex-direction: row !important;
+  }
+
+  .invoice-container .inv-table-wrap {
+    overflow: visible !important;
+  }
+
+  .invoice-container .inv-table-wrap table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+}
+
+/*  ACTION DIALOG MOTION*/
+@keyframes sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.action-panel {
+  animation: sheet-up 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 640px) {
+  .action-panel {
+    animation: pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+.animate-backdrop-in {
+  animation: backdrop-in 0.12s ease-out;
+}

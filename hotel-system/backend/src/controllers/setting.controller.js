@@ -31,7 +31,7 @@ const updateSettings = asyncHandler(async (req, res) => {
   res.json(settings);
 });
 
-/* ===== UPLOAD LOGO ===== */
+/*  UPLOAD LOGO  */
 const uploadLogo = asyncHandler(async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No image file provided" });
@@ -52,7 +52,7 @@ const uploadLogo = asyncHandler(async (req, res) => {
   res.json(settings);
 });
 
-/* ===== REMOVE LOGO ===== */
+/*  REMOVE LOGO  */
 const removeLogo = asyncHandler(async (req, res) => {
   const settings = await Settings.findOne();
   if (!settings) return res.json({});

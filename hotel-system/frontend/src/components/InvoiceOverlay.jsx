@@ -6,7 +6,7 @@ import { assetUrl } from "../utils/assetUrl";
 import { Loader2, ArrowLeft, Printer, X } from "lucide-react";
 
 /* INVOICE SHEET  */
-function InvoiceSheet({ reservationId }) {
+export function InvoiceSheet({ reservationId }) {
   const { settings, formatMoney, formatDate, formatDateTime } = useSettings();
   const { t } = useLanguage();
 
@@ -64,14 +64,14 @@ function InvoiceSheet({ reservationId }) {
   return (
     <div className="invoice-container bg-white text-black rounded-lg shadow-2xl overflow-hidden">
       {/* Header */}
-      <div className="invoice-header bg-gradient-to-r from-purple-900 to-indigo-900 text-white px-8 py-5">
-        <div className="flex justify-between items-start gap-6">
+      <div className="invoice-header bg-gradient-to-r from-purple-900 to-indigo-900 text-white px-4 py-4 md:px-8 md:py-5">
+        <div className="inv-header-row flex flex-col md:flex-row justify-between items-start gap-4 md:gap-6">
           <div className="flex-1">
             {settings?.logoUrl && (
-              <img src={assetUrl(settings.logoUrl)} alt="logo" className="h-14 w-auto object-contain mb-2" />
+              <img src={assetUrl(settings.logoUrl)} alt="logo" className="h-12 md:h-14 w-auto object-contain mb-2" />
             )}
-            <h1 className="text-2xl font-bold mb-1">{settings?.hotelName || "Hotel Name"}</h1>
-            <div className="text-xs opacity-90 space-y-0.5">
+            <h1 className="text-xl md:text-2xl font-bold mb-1">{settings?.hotelName || "Hotel Name"}</h1>
+            <div className="text-[11px] md:text-xs opacity-90 space-y-0.5">
               {settings?.address && <p>{settings.address}</p>}
               <div className="flex flex-wrap gap-x-4">
                 {settings?.contactPhone && <span>Tel: {settings.contactPhone}</span>}
@@ -79,8 +79,8 @@ function InvoiceSheet({ reservationId }) {
               </div>
             </div>
           </div>
-          <div className="text-right">
-            <h2 className="text-3xl font-black tracking-tight">INVOICE</h2>
+          <div className="text-left md:text-right">
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight">INVOICE</h2>
             <p className="text-xs mt-1.5"><strong>No:</strong> {invoiceNumber}</p>
             <p className="text-xs"><strong>Date:</strong> {issueDate}</p>
           </div>
@@ -88,10 +88,10 @@ function InvoiceSheet({ reservationId }) {
       </div>
 
       {/* Body */}
-      <div className="px-8 py-6">
+      <div className="px-4 py-4 md:px-8 md:py-6">
         {/* Bill To + Stay Details */}
-        <div className="grid grid-cols-2 gap-5 mb-6">
-          <div className="print-box border border-gray-300 rounded-md p-4">
+        <div className="inv-two-col grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-4 md:mb-6">
+          <div className="print-box border border-gray-300 rounded-md p-3 md:p-4">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Bill To</h3>
             <p className="text-base font-bold text-gray-900">{guest.name || "-"}</p>
             <div className="mt-1.5 text-xs text-gray-600 space-y-1">
@@ -101,9 +101,9 @@ function InvoiceSheet({ reservationId }) {
             </div>
           </div>
 
-          <div className="print-box border border-gray-300 rounded-md p-4">
+          <div className="print-box border border-gray-300 rounded-md p-3 md:p-4">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Stay Details</h3>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+            <div className="grid grid-cols-2 gap-x-3 md:gap-x-4 gap-y-1.5 text-xs">
               <div><p className="text-gray-500">Booking No</p><p className="font-bold">{reservation.bookingNo}</p></div>
               <div><p className="text-gray-500">Room</p><p className="font-bold">{room.roomNumber} ({room.roomType})</p></div>
               <div><p className="text-gray-500">Check-In</p><p className="font-bold">{formatDateTime(reservation.scheduledCheckIn)}</p></div>
@@ -114,104 +114,106 @@ function InvoiceSheet({ reservationId }) {
           </div>
         </div>
 
-        {/* Charges Table */}
-        <table className="w-full border-collapse mb-6">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="text-left py-2.5 px-3 text-[10px] font-bold uppercase tracking-wider text-gray-600 border-b-2 border-gray-800">Description</th>
-              <th className="text-center py-2.5 px-3 text-[10px] font-bold uppercase tracking-wider text-gray-600 border-b-2 border-gray-800">Qty</th>
-              <th className="text-right py-2.5 px-3 text-[10px] font-bold uppercase tracking-wider text-gray-600 border-b-2 border-gray-800">Rate</th>
-              <th className="text-right py-2.5 px-3 text-[10px] font-bold uppercase tracking-wider text-gray-600 border-b-2 border-gray-800">Amount</th>
-            </tr>
-          </thead>
-          <tbody className="text-xs">
-            <tr className="border-b border-gray-300">
-              <td className="py-2.5 px-3">
-                <p className="font-medium text-gray-900">Room Charges ({room.roomType})</p>
-                <p className="text-[10px] text-gray-500">{formatDate(reservation.scheduledCheckIn)} to {formatDate(reservation.scheduledCheckOut)}</p>
-              </td>
-              <td className="py-2.5 px-3 text-center">{nights} night(s)</td>
-              <td className="py-2.5 px-3 text-right">{rateOrDash(roomRate)}</td>
-              <td className="py-2.5 px-3 text-right font-semibold">{formatMoney(ps.roomCharge || 0)}</td>
-            </tr>
-
-            {(ps.extraBedCharge || 0) > 0 && (
+        {/* Charges Table (swipe horizontally on phones) */}
+        <div className="inv-table-wrap overflow-x-auto mb-4 md:mb-6">
+          <table className="w-full min-w-[480px] border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="text-left py-2.5 px-3 text-[10px] font-bold uppercase tracking-wider text-gray-600 border-b-2 border-gray-800">Description</th>
+                <th className="text-center py-2.5 px-3 text-[10px] font-bold uppercase tracking-wider text-gray-600 border-b-2 border-gray-800">Qty</th>
+                <th className="text-right py-2.5 px-3 text-[10px] font-bold uppercase tracking-wider text-gray-600 border-b-2 border-gray-800">Rate</th>
+                <th className="text-right py-2.5 px-3 text-[10px] font-bold uppercase tracking-wider text-gray-600 border-b-2 border-gray-800">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="text-xs">
               <tr className="border-b border-gray-300">
                 <td className="py-2.5 px-3">
-                  <p className="font-medium text-gray-900">Extra Bed</p>
-                  <p className="text-[10px] text-gray-500">Additional bed charge</p>
+                  <p className="font-medium text-gray-900">Room Charges ({room.roomType})</p>
+                  <p className="text-[10px] text-gray-500">{formatDate(reservation.scheduledCheckIn)} to {formatDate(reservation.scheduledCheckOut)}</p>
                 </td>
-                <td className="py-2.5 px-3 text-center">{reservation.extraBeds || 1}</td>
-                <td className="py-2.5 px-3 text-right">{rateOrDash(extraBedRate)}</td>
-                <td className="py-2.5 px-3 text-right font-semibold">{formatMoney(ps.extraBedCharge)}</td>
+                <td className="py-2.5 px-3 text-center">{nights} night(s)</td>
+                <td className="py-2.5 px-3 text-right">{rateOrDash(roomRate)}</td>
+                <td className="py-2.5 px-3 text-right font-semibold">{formatMoney(ps.roomCharge || 0)}</td>
               </tr>
-            )}
 
-            {(ps.extraPersonCharge || 0) > 0 && (
-              <tr className="border-b border-gray-300">
-                <td className="py-2.5 px-3"><p className="font-medium text-gray-900">Extra Person</p></td>
-                <td className="py-2.5 px-3 text-center">-</td>
-                <td className="py-2.5 px-3 text-right">-</td>
-                <td className="py-2.5 px-3 text-right font-semibold">{formatMoney(ps.extraPersonCharge)}</td>
-              </tr>
-            )}
+              {(ps.extraBedCharge || 0) > 0 && (
+                <tr className="border-b border-gray-300">
+                  <td className="py-2.5 px-3">
+                    <p className="font-medium text-gray-900">Extra Bed</p>
+                    <p className="text-[10px] text-gray-500">Additional bed charge</p>
+                  </td>
+                  <td className="py-2.5 px-3 text-center">{reservation.extraBeds || 1}</td>
+                  <td className="py-2.5 px-3 text-right">{rateOrDash(extraBedRate)}</td>
+                  <td className="py-2.5 px-3 text-right font-semibold">{formatMoney(ps.extraBedCharge)}</td>
+                </tr>
+              )}
 
-            {(ps.overtimeCharge || 0) > 0 && (
-              <tr className="border-b border-gray-300">
-                <td className="py-2.5 px-3">
-                  <p className="font-medium text-gray-900">Overtime Charges</p>
-                  <p className="text-[10px] text-gray-500">Late check-out fee</p>
-                </td>
-                <td className="py-2.5 px-3 text-center">-</td>
-                <td className="py-2.5 px-3 text-right">{overtimeRate == null ? "-" : `${formatMoney(overtimeRate)}/hr`}</td>
-                <td className="py-2.5 px-3 text-right font-semibold">{formatMoney(ps.overtimeCharge)}</td>
-              </tr>
-            )}
+              {(ps.extraPersonCharge || 0) > 0 && (
+                <tr className="border-b border-gray-300">
+                  <td className="py-2.5 px-3"><p className="font-medium text-gray-900">Extra Person</p></td>
+                  <td className="py-2.5 px-3 text-center">-</td>
+                  <td className="py-2.5 px-3 text-right">-</td>
+                  <td className="py-2.5 px-3 text-right font-semibold">{formatMoney(ps.extraPersonCharge)}</td>
+                </tr>
+              )}
 
-            {(ps.voucherDiscount || 0) > 0 && (
-              <tr className="border-b border-gray-300">
-                <td className="py-2.5 px-3">
-                  <p className="font-medium text-gray-900">Voucher Discount</p>
-                  {reservation.voucherCode && <p className="text-[10px] text-gray-500">Code: {reservation.voucherCode}</p>}
-                </td>
-                <td className="py-2.5 px-3 text-center">-</td>
-                <td className="py-2.5 px-3 text-right">-</td>
-                <td className="py-2.5 px-3 text-right font-semibold">-{formatMoney(ps.voucherDiscount)}</td>
-              </tr>
-            )}
+              {(ps.overtimeCharge || 0) > 0 && (
+                <tr className="border-b border-gray-300">
+                  <td className="py-2.5 px-3">
+                    <p className="font-medium text-gray-900">Overtime Charges</p>
+                    <p className="text-[10px] text-gray-500">Late check-out fee</p>
+                  </td>
+                  <td className="py-2.5 px-3 text-center">-</td>
+                  <td className="py-2.5 px-3 text-right">{overtimeRate == null ? "-" : `${formatMoney(overtimeRate)}/hr`}</td>
+                  <td className="py-2.5 px-3 text-right font-semibold">{formatMoney(ps.overtimeCharge)}</td>
+                </tr>
+              )}
 
-            {(ps.taxAmount || 0) > 0 && (
-              <tr className="border-b border-gray-300">
-                <td className="py-2.5 px-3"><p className="font-medium text-gray-900">Tax ({settings?.taxRate || 0}%)</p></td>
-                <td className="py-2.5 px-3 text-center">-</td>
-                <td className="py-2.5 px-3 text-right">-</td>
-                <td className="py-2.5 px-3 text-right font-semibold">{formatMoney(ps.taxAmount)}</td>
-              </tr>
-            )}
+              {(ps.voucherDiscount || 0) > 0 && (
+                <tr className="border-b border-gray-300">
+                  <td className="py-2.5 px-3">
+                    <p className="font-medium text-gray-900">Voucher Discount</p>
+                    {reservation.voucherCode && <p className="text-[10px] text-gray-500">Code: {reservation.voucherCode}</p>}
+                  </td>
+                  <td className="py-2.5 px-3 text-center">-</td>
+                  <td className="py-2.5 px-3 text-right">-</td>
+                  <td className="py-2.5 px-3 text-right font-semibold">-{formatMoney(ps.voucherDiscount)}</td>
+                </tr>
+              )}
 
-            <tr>
-              <td colSpan={3} className="py-2.5 px-3 text-right font-bold text-gray-700">Subtotal:</td>
-              <td className="py-2.5 px-3 text-right font-bold">
-                {formatMoney((ps.roomCharge || 0) + (ps.extraBedCharge || 0) + (ps.extraPersonCharge || 0) + (ps.overtimeCharge || 0))}
-              </td>
-            </tr>
+              {(ps.taxAmount || 0) > 0 && (
+                <tr className="border-b border-gray-300">
+                  <td className="py-2.5 px-3"><p className="font-medium text-gray-900">Tax ({settings?.taxRate || 0}%)</p></td>
+                  <td className="py-2.5 px-3 text-center">-</td>
+                  <td className="py-2.5 px-3 text-right">-</td>
+                  <td className="py-2.5 px-3 text-right font-semibold">{formatMoney(ps.taxAmount)}</td>
+                </tr>
+              )}
 
-            {(ps.voucherDiscount || 0) > 0 && (
               <tr>
-                <td colSpan={3} className="py-2.5 px-3 text-right font-bold text-gray-700">Discount:</td>
-                <td className="py-2.5 px-3 text-right font-bold">-{formatMoney(ps.voucherDiscount)}</td>
+                <td colSpan={3} className="py-2.5 px-3 text-right font-bold text-gray-700">Subtotal:</td>
+                <td className="py-2.5 px-3 text-right font-bold">
+                  {formatMoney((ps.roomCharge || 0) + (ps.extraBedCharge || 0) + (ps.extraPersonCharge || 0) + (ps.overtimeCharge || 0))}
+                </td>
               </tr>
-            )}
 
-            <tr className="border-t-2 border-gray-900 bg-gray-100">
-              <td colSpan={3} className="py-3 px-3 text-right text-base font-black text-gray-900">TOTAL AMOUNT:</td>
-              <td className="py-3 px-3 text-right text-base font-black text-gray-900">{formatMoney(total)}</td>
-            </tr>
-          </tbody>
-        </table>
+              {(ps.voucherDiscount || 0) > 0 && (
+                <tr>
+                  <td colSpan={3} className="py-2.5 px-3 text-right font-bold text-gray-700">Discount:</td>
+                  <td className="py-2.5 px-3 text-right font-bold">-{formatMoney(ps.voucherDiscount)}</td>
+                </tr>
+              )}
 
-        {/* Payment + Summary */}
-        <div className="grid grid-cols-2 gap-5 mb-6">
+              <tr className="border-t-2 border-gray-900 bg-gray-100">
+                <td colSpan={3} className="py-3 px-3 text-right text-base font-black text-gray-900">TOTAL AMOUNT:</td>
+                <td className="py-3 px-3 text-right text-base font-black text-gray-900">{formatMoney(total)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Payments + Summary */}
+        <div className="inv-two-col grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-4 md:mb-6">
           <div>
             <h3 className="text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-2">Payment Details</h3>
             {payments && payments.length > 0 ? (
@@ -231,7 +233,7 @@ function InvoiceSheet({ reservationId }) {
             )}
           </div>
 
-          <div className="print-box bg-gray-50 rounded-md p-4">
+          <div className="print-box bg-gray-50 rounded-md p-3 md:p-4">
             <h3 className="text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-2.5">Amount Summary</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-600">Total Amount:</span><span className="font-bold">{formatMoney(total)}</span></div>
@@ -272,7 +274,7 @@ function InvoiceSheet({ reservationId }) {
   );
 }
 
-/* OVERLAY WRAPPER  */
+/* OVERLAY WRAPPER */
 export default function InvoiceOverlay({ reservationId, onClose }) {
   const { t } = useLanguage();
 
@@ -292,21 +294,21 @@ export default function InvoiceOverlay({ reservationId, onClose }) {
     <div className="invoice-overlay-backdrop fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm overflow-y-auto">
       {/* Toolbar (never prints) */}
       <div className="no-print sticky top-0 z-10 bg-gray-900/95 backdrop-blur border-b border-gray-700 px-4 py-3 flex items-center justify-between gap-3">
-        <button onClick={onClose} className="btn-secondary flex items-center gap-2 text-sm">
+        <button onClick={onClose} className="btn-secondary flex items-center gap-2 text-sm py-2.5">
           <ArrowLeft className="w-4 h-4" /> {t("back")}
         </button>
         <div className="flex items-center gap-2">
-          <button onClick={() => window.print()} className="btn-primary flex items-center gap-2 text-sm">
+          <button onClick={() => window.print()} className="btn-primary flex items-center gap-2 text-sm py-2.5">
             <Printer className="w-4 h-4" /> {t("print")}
           </button>
-          <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
+          <button onClick={onClose} className="p-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
             <X className="w-5 h-5" />
           </button>
         </div>
       </div>
 
-      {/* The A4 sheet */}
-      <div className="invoice-overlay-scroll py-8 px-4">
+      {/* The sheet */}
+      <div className="invoice-overlay-scroll py-4 md:py-8 px-2 md:px-4">
         <div className="max-w-4xl mx-auto">
           <InvoiceSheet reservationId={reservationId} />
         </div>

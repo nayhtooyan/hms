@@ -7,10 +7,10 @@ import { assetUrl } from "../utils/assetUrl";
 import { Loader2, Save, Upload, Trash2, Image as ImageIcon } from "lucide-react";
 
 const currencyOptions = [
-  { code: "USD", symbol: "$", label: "US Dollar" },
-  { code: "MMK", symbol: "Ks", label: "Myanmar Kyat" },
-  { code: "CNY", symbol: "¥", label: "Chinese Yuan" },
-  { code: "THB", symbol: "฿", label: "Thai Baht" },
+  { code: "USD", symbol: "$ ", label: "US Dollar" },
+  { code: "MMK", symbol: "MMK ", label: "Myanmar Kyat" },
+  { code: "CNY", symbol: "¥ ", label: "Chinese Yuan" },
+  { code: "THB", symbol: "฿ ", label: "Thai Baht" },
 ];
 
 const timezoneOptions = [
@@ -274,7 +274,6 @@ export default function Settings() {
         </div>
 
         <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2 w-full sm:w-auto">
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
           {saving ? t("saving") : t("saveSettings")}
         </button>
       </form>
