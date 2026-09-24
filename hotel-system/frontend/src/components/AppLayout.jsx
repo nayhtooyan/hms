@@ -3,11 +3,12 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { useLanguage } from "../LanguageContext";
 import { useSettings } from "../SettingsContext";
+import NotificationBell from "./NotificationBell";
 import { assetUrl } from "../utils/assetUrl";
 import {
-  LayoutDashboard, BedDouble, Home, CalendarCheck, Ticket, CreditCard,
+  LayoutDashboard, BedDouble,  Home, CalendarCheck, Ticket, CreditCard,
   Users, Settings, FolderCode, Menu, X, LogOut, ChevronDown,
-  BarChart3, HardDrive, Brush
+  BarChart3, HardDrive, Brush , Birdhouse , BuildingComplex
 } from "lucide-react";
 
 const navItems = [
@@ -17,7 +18,7 @@ const navItems = [
   { to: "/reservations", labelKey: "reservations", icon: CalendarCheck, roles: ["admin", "manager", "reception"] },
   { to: "/vouchers", labelKey: "vouchers", icon: Ticket, roles: ["admin", "manager", "reception"] },
   { to: "/payments", labelKey: "payments", icon: CreditCard, roles: ["admin", "manager", "reception"] },
-  { to: "/housekeeping", labelKey: "housekeeping", icon: Brush, roles: ["admin", "manager", "reception", "cleaner", "maintenance"] },
+  { to: "/housekeeping", labelKey: "housekeeping", icon: Birdhouse, roles: ["admin", "manager", "reception", "cleaner", "maintenance"] },
   { to: "/reports", labelKey: "reports", icon: BarChart3, roles: ["admin", "manager"] },
   { to: "/backups", labelKey: "backups", icon: HardDrive, roles: ["admin"] },
   { to: "/audit", labelKey: "auditLogs", icon: FolderCode, roles: ["admin", "manager"] },
@@ -85,7 +86,7 @@ export default function AppLayout() {
               />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-glow">
-                <BedDouble className="w-6 h-6" />
+                <button className="w-6 h-6" />
               </div>
             )}
             <div>
@@ -182,6 +183,8 @@ export default function AppLayout() {
                 MM
               </button>
             </div>
+
+            <NotificationBell />
 
             {/* Mobile Logout */}
             <button

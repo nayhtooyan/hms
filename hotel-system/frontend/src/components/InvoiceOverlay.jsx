@@ -245,9 +245,9 @@ export function InvoiceSheet({ reservationId }) {
             </div>
             <div className="mt-3">
               {balance === 0 ? (
-                <div className="print-banner bg-green-100 text-green-800 text-center py-1.5 rounded-md text-xs font-bold">✓ PAID IN FULL</div>
+                <div className="print-banner bg-green-100 text-green-800 text-center py-1.5 rounded-md text-xs font-bold">PAID IN FULL</div>
               ) : (
-                <div className="print-banner bg-red-100 text-red-800 text-center py-1.5 rounded-md text-xs font-bold">⚠ BALANCE DUE: {formatMoney(balance)}</div>
+                <div className="print-banner bg-red-100 text-red-800 text-center py-1.5 rounded-md text-xs font-bold">BALANCE DUE: {formatMoney(balance)}</div>
               )}
             </div>
           </div>

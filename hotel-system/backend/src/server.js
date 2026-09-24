@@ -4,6 +4,9 @@ const http = require("http");
 const app = require("./app");
 const connectDB = require("./config/db");
 const { Server } = require("socket.io");
+const notificationService = require("./services/notification.service");
+const notificationScheduler = require("./services/notificationScheduler");
+
 
 const PORT = process.env.PORT || 5000;
 
@@ -23,6 +26,7 @@ const start = async () => {
 
   // Store io on app so controllers can access it
   app.set("io", io);
+  notificationService.setIo(io);
 
   io.on("connection", (socket) => {
     console.log(`[Socket] Device connected: ${socket.id}`);
@@ -35,6 +39,7 @@ const start = async () => {
   server.listen(PORT, () => {
     console.log(`Backend running on http://localhost:${PORT}`);
     console.log(`[Socket] WebSocket server ready`);
+    notificationScheduler.init();
   });
 };
 

@@ -4,6 +4,7 @@ const Room = require("../models/Room");
 const Voucher = require("../models/Voucher"); 
 const HousekeepingTask = require("../models/HousekeepingTask");
 const Setting = require("../models/Setting");
+const { resolveNotifications } = require("../services/notification.service");
 
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -278,8 +279,8 @@ const checkOutReservation = asyncHandler(async (req, res) => {
   await reservation.save();
 
   await Room.findByIdAndUpdate(reservation.roomId, {
-  status: "cleaning"
-});
+    status: "cleaning"
+  });
 
   await HousekeepingTask.create({
     roomId: reservation.roomId,
@@ -299,6 +300,7 @@ const checkOutReservation = asyncHandler(async (req, res) => {
   emitEvent(req, "rooms:updated", { action: "status_changed" });
   emitEvent(req, "housekeeping:updated", { action: "auto_task_created" });
   emitEvent(req, "dashboard:updated", { action: "data_changed" });
+  resolveNotifications({ types: ["checkout_soon", "checkout_overtime"], reservationId: String(reservation._id) });
   res.json(populated);
 });
 
@@ -401,6 +403,7 @@ const extendReservation = asyncHandler(async (req, res) => {
     total
   };
   await reservation.save();
+  resolveNotifications({ types: ["checkout_soon", "checkout_overtime"], reservationId: String(reservation._id) });
 
   emitEvent(req, "reservations:updated", { action: "extended", reservationId: reservation._id });
   emitEvent(req, "dashboard:updated", { action: "data_changed" });

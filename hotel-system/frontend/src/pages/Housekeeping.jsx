@@ -116,9 +116,9 @@ export default function Housekeeping() {
   };
 
   const typeIcons = {
-    cleaning: <Broom className="w-4 h-4" />,
-    maintenance: <Wrench className="w-4 h-4" />,
-    inspection: <Eye className="w-4 h-4" />,
+    cleaning: <span></span>,
+    maintenance: <span></span>,
+    inspection: <span></span>,
   };
 
   return (
@@ -172,14 +172,14 @@ export default function Housekeeping() {
                       <div className="flex items-center justify-end gap-1.5">
                         {task.status === "pending" && (
                           <>
-                            <button onClick={() => startTask(task._id)} className="p-2 rounded-lg text-blue-400 hover:bg-blue-500/10" title={t("start")}><Play className="w-4 h-4" /></button>
-                            <button onClick={() => cancelTask(task._id)} className="p-2 rounded-lg text-red-400 hover:bg-red-500/10" title={t("cancel")}><XCircle className="w-4 h-4" /></button>
+                            <button onClick={() => startTask(task._id)} className="p-2 rounded-lg text-blue-400 hover:bg-blue-500/10" title={t("start")}><span>{t("start")}</span></button>
+                            <button onClick={() => cancelTask(task._id)} className="p-2 rounded-lg text-red-400 hover:bg-red-500/10" title={t("cancel")}><span>{t("cancle")}</span></button>
                           </>
                         )}
                         {task.status === "in_progress" && (
                           <>
-                            <button onClick={() => completeTask(task._id)} className="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10" title={t("completed")}><CheckCircle className="w-4 h-4" /></button>
-                            <button onClick={() => cancelTask(task._id)} className="p-2 rounded-lg text-red-400 hover:bg-red-500/10" title={t("cancel")}><XCircle className="w-4 h-4" /></button>
+                            <button onClick={() => completeTask(task._id)} className="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10" title={t("completed")}><span>{t("completed")}</span></button>
+                            <button onClick={() => cancelTask(task._id)} className="p-2 rounded-lg text-red-400 hover:bg-red-500/10" title={t("cancel")}><span>{t("cancle")}</span></button>
                           </>
                         )}
                       </div>

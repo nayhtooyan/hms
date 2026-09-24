@@ -271,6 +271,8 @@ const translations = {
     unassigned: "Unassigned",
     assignTo: "Assign To",
     selectRoom: "Select Room",
+    start:  "Start",
+    cancle: "Cancle",
 
     // USERS
     usersTitle: "User Management",
@@ -367,7 +369,6 @@ const translations = {
     totalTransactions: "Total Transactions",
     outstandingBalance: "Total Outstanding Balance",
     allClear: "No unpaid reservations. All clear!",
-    receiptNo: "Receipt No.",
 
     // BACKUPS
     backupsTitle: "Backup & Restore",
@@ -416,7 +417,24 @@ const translations = {
     source: "Source",
     actualCheckIn: "Actual Check-In",
     actualCheckOut: "Actual Check-Out",
-    taxAmount: "Tax Amount"
+    taxAmount: "Tax Amount",
+
+    //Notification
+    notif_checkout_soon_title: "Check-out Reminder",
+    notif_checkout_soon_msg: "Room {room} — {guest} checks out at {time} (in {mins} min)",
+    notif_checkout_overtime_title: "OVERTIME Alert",
+    notif_checkout_overtime_msg: "Room {room} — {guest} is {mins} min past check-out. Overtime charges applying.",
+    notif_backup_overdue_title: "Backup Overdue",
+    notif_backup_overdue_msg: "Last successful backup: {time}. Create or download a backup now.",
+    notif_backup_failed_title: "Backup Failed",
+    notif_backup_failed_msg: "Last backup attempt failed at {time}. Please check backups.",
+    notif_digest_revenue_title: "Today's Revenue",
+    notif_digest_revenue_msg: "Revenue so far {amount} • Arrivals {arrivals} • Departures {departures}",
+    notif_digest_ops_title: "Today's Schedule",
+    notif_digest_ops_msg: "Arrivals {arrivals} • Departures {departures}",
+    mute: "Mute",
+    unmute: "Unmute",
+    solved: "Solved"
   },
 
   my: {
@@ -504,7 +522,6 @@ const translations = {
     refreshing: "အသစ်ပြန်လုပ်နေသည်...",
     cleaningTasks: "သန့်ရှင်းရေး လုပ်ငန်းများ",
     maintenanceTasks: "ပြုပြင်ရေး လုပ်ငန်းများ",
-    receiptNo: "ဘောင်ချာ နံပါတ်",
 
     // ROOMS
     roomsTitle: "အခန်း စီမံခန့်ခွဲမှု",
@@ -689,6 +706,9 @@ const translations = {
     unassigned: "တာဝန်မပေးရသေး",
     assignTo: "တာဝန်ပေးရန်",
     selectRoom: "အခန်း ရွေးချယ်ပါ",
+    start:  "စတင်မည်",
+    cancle: "ပယ်ဖျက်မည်",
+    
 
     // USERS
     usersTitle: "အသုံးပြုသူ စီမံခန့်ခွဲမှု",
@@ -834,7 +854,24 @@ const translations = {
     source: "ရင်းမြစ်",
     actualCheckIn: "အမှန်တကယ် Check In",
     actualCheckOut: "အမှန်တကယ် Check Out",
-    taxAmount: "အခွန် ပမာဏ"
+    taxAmount: "အခွန် ပမာဏ",
+
+    //Notification
+    notif_checkout_soon_title: "Check-out သတိပေးချက်",
+    notif_checkout_soon_msg: "အခန်း {room} — {guest} ကို {time} တွင် check-out လုပ်ရမည် ({mins} မိနစ်အတွင်း)",
+    notif_checkout_overtime_title: "အချိန်ပို သတိပေးချက်",
+    notif_checkout_overtime_msg: "အခန်း {room} — {guest} သည် check-out ထက် {mins} မိနစ် လွန်နေပါပြီ။ အချိန်ပိုကြေး ကျသင့်နေပါသည်။",
+    notif_backup_overdue_title: "အရန်သိမ်းဆည်းမှု နောက်ကျနေပါသည်",
+    notif_backup_overdue_msg: "နောက်ဆုံးအောင်မြင်သော အရန်သိမ်းဆည်းမှု: {time}။ ယခုပင် အရန်သိမ်းဆွဲပါ။",
+    notif_backup_failed_title: "အရန်သိမ်း မအောင်မြင်ပါ",
+    notif_backup_failed_msg: "နောက်ဆုံးအရန်သိမ်းဆည်းရန်ကြိုးစားမှု {time} တွင် မအောင်မြင်ပါ။ စစ်ဆေးပါ။",
+    notif_digest_revenue_title: "ယနေ့ ဝင်ငွေ",
+    notif_digest_revenue_msg: "လက်ရှိဝင်ငွေ {amount} • ဝင်ရောက် {arrivals} • ထွက်ခွာ {departures}",
+    notif_digest_ops_title: "ယနေ့ အစီအစဉ်",
+    notif_digest_ops_msg: "ဝင်ရောက် {arrivals} • ထွက်ခွာ {departures}",
+    mute: "အသံပိတ်",
+    unmute: "အသံဖွင့်",
+    solved: "ဖြေရှင်းပြီး",
   },
 };
 

@@ -6,6 +6,7 @@ import { useLanguage } from "../LanguageContext";
 import Modal from "../components/Modal";
 import InvoiceOverlay from "../components/InvoiceOverlay";
 import useRealTimeRefresh from "../hooks/useRealTimeRefresh";
+import { useLocation } from "react-router-dom";
 
 const statusConfig = {
   available: { strip: "bg-emerald-500", tint: "bg-emerald-500/10", border: "border-emerald-500/40", text: "text-emerald-300" },
@@ -57,6 +58,8 @@ export default function RoomBoard() {
   const [paying, setPaying] = useState(false);
   const [invoiceFor, setInvoiceFor] = useState(null);
 
+  const location = useLocation();
+
   const nowForMin = new Date();
   const minDateTime = new Date(nowForMin.getTime() - nowForMin.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
@@ -94,6 +97,21 @@ export default function RoomBoard() {
 
   useEffect(() => { loadAll(); }, []);
   useRealTimeRefresh(loadAll, ["rooms:updated", "reservations:updated", "payments:updated", "housekeeping:updated"]);
+
+  // Deep link
+  useEffect(() => {
+    const target = location.state?.openReservationId;
+    if (!target || reservations.length === 0) return;
+    const res = reservations.find((r) => String(r._id) === String(target));
+    if (res && res.status === "checked_in") {
+      setActiveRes(res);
+      setDrawerOpen(true);
+      setShowPay(false);
+      setFolio(null);
+      loadFolio(res._id);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, reservations]);
 
   /*  status / reserve / walk-in  */
   const updateStatus = async (roomId, status) => {

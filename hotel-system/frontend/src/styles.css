@@ -454,3 +454,7 @@ body {
 .animate-backdrop-in {
   animation: backdrop-in 0.12s ease-out;
 }
+
+.animate-pop-in {
+  animation: pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}

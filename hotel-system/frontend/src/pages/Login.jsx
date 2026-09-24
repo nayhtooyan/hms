@@ -4,7 +4,7 @@ import { useAuth } from "../AuthContext";
 import { useLanguage } from "../LanguageContext";
 import api from "../api";
 import { assetUrl } from "../utils/assetUrl";
-import { BedDouble, Eye, EyeOff, Loader2 } from "lucide-react";
+import { BuildingComplex, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function Login() {
   const { login } = useAuth();
@@ -84,7 +84,7 @@ export default function Login() {
             />
           ) : (
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-glow-lg mb-4">
-              <BedDouble className="w-8 h-8 text-white" />
+              <BuildingComplex className="w-8 h-8 text-white" />
             </div>
           )}
           <h1 className="text-3xl font-extrabold text-white tracking-tight">

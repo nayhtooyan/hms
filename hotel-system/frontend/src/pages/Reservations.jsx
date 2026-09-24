@@ -193,7 +193,7 @@ export default function Reservations() {
                           <button onClick={() => checkIn(r._id)} className="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10"><LogIn className="w-4 h-4" /></button>
                           <button onClick={() => cancel(r._id)} className="p-2 rounded-lg text-red-400 hover:bg-red-500/10"><XCircle className="w-4 h-4" /></button>
                         </>)}
-                        {r.status === "checked_in" && <button onClick={() => checkOut(r._id)} className="p-2 rounded-lg text-blue-400 hover:bg-blue-500/10"><LogOut className="w-4 h-4" /></button>}
+                        {r.status === "checked_in" && <button onClick={() => checkOut(r._id)} className="p-1 rounded-sm bg-lg text-blue-400 hover:bg-blue-500/10"><LogOut className="w-4 h-4" /></button>}
                       </div>
                     </td>
                   </tr>
