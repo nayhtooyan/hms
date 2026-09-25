@@ -317,6 +317,32 @@ const translations = {
     balance: "Balance",
     notif_lowstock_title: "Low Stock Alert",
     notif_lowstock_msg: "{item}: only {stock} {unit} left (minimum {min})",    
+    // delete
+    deleteBtn: "Delete",
+    deleteItem: "Delete Item",
+    confirmDeleteMsg: "Delete this item? It will be hidden from inventory, but its movement history is kept for records.",
+    itemDeleted: "Item deleted",
+    // units
+    unit_pcs: "pcs", unit_box: "box", unit_pack: "pack", unit_bottle: "bottle",
+    unit_can: "can", unit_case: "case", unit_bag: "bag", unit_roll: "roll",
+    unit_set: "set", unit_pair: "pair", unit_liter: "liter", unit_tube: "tube",
+    // default items
+    item_bedsheets: "Bedsheets", item_pillowcases: "Pillowcases", item_duvet_covers: "Duvet Covers",
+    item_mattress_protectors: "Mattress Protectors", item_blankets: "Blankets", item_towels: "Towels",
+    item_bath_mats: "Bath Mats", item_laundry_bags: "Laundry Bags",
+    item_shampoo: "Shampoo", item_conditioner: "Conditioner", item_body_soap: "Body Soap",
+    item_hand_soap: "Hand Soap", item_toilet_paper: "Toilet Paper", item_facial_tissue: "Facial Tissue",
+    item_cleaning_chemicals: "Cleaning Chemicals", item_floor_cleaner: "Floor Cleaner",
+    item_glass_cleaner: "Glass Cleaner", item_air_freshener: "Air Freshener", item_trash_bags: "Trash Bags",
+    item_sponges_cloths: "Sponges & Cloths", item_rubber_gloves: "Rubber Gloves",
+    item_toothbrush_kits: "Toothbrush Kits", item_slippers: "Slippers", item_shower_caps: "Shower Caps",
+    item_cotton_buds: "Cotton Buds", item_sewing_kits: "Sewing Kits", item_coffee_tea: "Coffee & Tea",
+    item_water_bottles: "Water Bottles",
+    item_light_bulbs: "Light Bulbs", item_batteries: "Batteries", item_wires_cables: "Wires & Cables",
+    item_switches_sockets: "Switches & Sockets", item_plumbing_parts: "Plumbing Parts",
+    item_faucets_taps: "Faucets & Taps", item_washers_seals: "Washers & Seals",
+    item_tools_supplies: "Tools & Supplies", item_screws_nails: "Screws & Nails",
+    item_adhesive_tape: "Adhesive Tape", item_lubricant: "Lubricant", item_fuses: "Fuses",
 
     // USERS
     usersTitle: "User Management",
@@ -801,6 +827,32 @@ const translations = {
     balance: "လက်ကျန်",
     notif_lowstock_title: "လက်ကျန် နည်းသတိပေးချက်",
     notif_lowstock_msg: "{item}: လက်ကျန် {stock} {unit} သာ (အနည်းဆုံး {min})",
+    // delete
+    deleteBtn: "ဖျက်ရန်",
+    deleteItem: "ပစ္စည်းဖျက်ရန်",
+    confirmDeleteMsg: "ဤပစ္စည်းကို ဖျက်မှာလား? စာရင်းမှ ဖျောက်ထားမည်ဖြစ်သော်လည်း လှုပ်ရှားမှုမှတ်တမ်းများကို မှတ်တမ်းအဖြစ် သိမ်းဆည်းထားမည်။",
+    itemDeleted: "ပစ္စည်းဖျက်ပြီးပါပြီ",
+    // units
+    unit_pcs: "လုံး", unit_box: "သေတ္တာ", unit_pack: "ထုပ်", unit_bottle: "ပုလင်း",
+    unit_can: "ဗူး", unit_case: "ကေ့စ်", unit_bag: "အိတ်", unit_roll: "လိပ်",
+    unit_set: "အစုံ", unit_pair: "စုံ", unit_liter: "လီတာ", unit_tube: "ပြွန်",
+    // default items
+    item_bedsheets: "အိပ်ရာခင်းများ", item_pillowcases: "ခေါင်းအုံးစွပ်များ", item_duvet_covers: "စောင်အဖုံးများ",
+    item_mattress_protectors: "မွေ့ယာကာကွယ်အခင်းများ", item_blankets: "စောင်များ", item_towels: "တဘက်များ",
+    item_bath_mats: "ရေချိုးခန်းသုံးအခင်းများ", item_laundry_bags: "အဝတ်လျှော်အိတ်များ",
+    item_shampoo: "ခေါင်းလျှော်ရည်", item_conditioner: "ဆံပင်ပျော့ဆေး", item_body_soap: "ကိုယ်တိုက်ဆပ်ပြာ",
+    item_hand_soap: "လက်ဆေးဆပ်ပြာ", item_toilet_paper: "အိမ်သာသုံးစက္ကူ", item_facial_tissue: "မျက်နှာသုတ်စက္ကူ",
+    item_cleaning_chemicals: "သန့်ရှင်းရေးဓာတုပစ္စည်းများ", item_floor_cleaner: "ကြမ်းပြင်သန့်စင်ဆေး",
+    item_glass_cleaner: "မှန်သန့်စင်ဆေး", item_air_freshener: "လေသန့်ဆေး", item_trash_bags: "အမှိုက်အိတ်များ",
+    item_sponges_cloths: "ရေမြှုပ်နှင့် အဝတ်စများ", item_rubber_gloves: "ရာဘာလက်အိတ်များ",
+    item_toothbrush_kits: "သွားတိုက်တံအစုံများ", item_slippers: "အခန်းစီးဖိနပ်များ", item_shower_caps: "ရေချိုးခေါင်းစွပ်များ",
+    item_cotton_buds: "ဝါဂွမ်းတံများ", item_sewing_kits: "အပ်ချုပ်ပစ္စည်းများ", item_coffee_tea: "ကော်ဖီနှင့် လက်ဖက်ရည်",
+    item_water_bottles: "ရေဘူးများ",
+    item_light_bulbs: "မီးသီးများ", item_batteries: "ဘက်ထရီများ", item_wires_cables: "ဝါယာနှင့် ကြိုးများ",
+    item_switches_sockets: "ခလုတ်နှင့် ပလပ်ပေါက်များ", item_plumbing_parts: "ရေပိုက်အပိုပစ္စည်းများ",
+    item_faucets_taps: "ရေပိုက်ခေါင်းများ", item_washers_seals: "ဝါရှာနှင့် ဆီးလ်များ",
+    item_tools_supplies: "ကိရိယာနှင့် အသုံးအဆောင်များ", item_screws_nails: "ဝက်အူနှင့် သံမှိုများ",
+    item_adhesive_tape: "ကော်တိပ်များ", item_lubricant: "အချောဆီ", item_fuses: "ဖျူးများ",
     
 
     // USERS

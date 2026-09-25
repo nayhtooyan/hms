@@ -14,6 +14,7 @@ const REASONS = {
 };
 
 const CATEGORIES = ["linen", "housekeeping", "maintenance"];
+const UNITS = ["pcs", "box", "pack", "bottle", "can", "case", "bag", "roll", "set", "pair", "liter", "tube"];
 
 export default function Inventory() {
   const { formatMoney, formatDateTime } = useSettings();
@@ -40,9 +41,19 @@ export default function Inventory() {
   const [movements, setMovements] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const canManage = ["admin", "manager"].includes(user?.role);
   const canOut = ["admin", "manager", "cleaner", "maintenance"].includes(user?.role);
+
+  /* translation helpers */
+  const tr = (key, fallback) => {
+    const v = t(key);
+    return v === key ? fallback : v;
+  };
+  const displayName = (item) => (item?.nameKey ? tr(item.nameKey, item.name) : item?.name || "-");
+  const displayUnit = (u) => tr(`unit_${u}`, u);
 
   const load = async () => {
     try {
@@ -58,7 +69,7 @@ export default function Inventory() {
   useEffect(() => { load(); }, []);
   useRealTimeRefresh(load, ["inventory:updated"]);
 
-  /*  item form  */
+  /* item form */
   const openAdd = () => {
     setEditing(null);
     setForm({ name: "", category: "linen", unit: "pcs", price: "", minStock: "", openingStock: "" });
@@ -67,7 +78,14 @@ export default function Inventory() {
 
   const openEdit = (item) => {
     setEditing(item);
-    setForm({ name: item.name, category: item.category, unit: item.unit, price: item.price, minStock: item.minStock, openingStock: "" });
+    setForm({
+      name: displayName(item),
+      category: item.category,
+      unit: item.unit,
+      price: item.price,
+      minStock: item.minStock,
+      openingStock: ""
+    });
     setItemModal(true);
   };
 
@@ -97,7 +115,23 @@ export default function Inventory() {
     }
   };
 
-  /*  movements  */
+  /* delete */
+  const doDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      setDeleting(true);
+      await api.delete(`/inventory/${confirmDelete._id}`);
+      addToast(t("itemDeleted"));
+      setConfirmDelete(null);
+      load();
+    } catch (err) {
+      addToast(err.response?.data?.message || t("error"), "error");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  /* movements */
   const openMove = (item, type) => {
     setMoveItem(item);
     setMoveType(type);
@@ -142,8 +176,8 @@ export default function Inventory() {
   const seed = async () => {
     try {
       setSeeding(true);
-      await api.post("/inventory/seed");
-      addToast(t("seedDone"));
+      const res = await api.post("/inventory/seed");
+      addToast(`${t("seedDone")} (+${res.data.created} / ↺${res.data.restored})`);
       load();
     } catch (err) {
       addToast(err.response?.data?.message || t("error"), "error");
@@ -152,7 +186,7 @@ export default function Inventory() {
     }
   };
 
-  /*  derived  */
+  /* derived */
   const filtered = tab === "all" ? items : items.filter((i) => i.category === tab);
   const lowCount = items.filter((i) => i.minStock > 0 && i.stock <= i.minStock).length;
   const totalValue = items.reduce((s, i) => s + i.stock * i.price, 0);
@@ -245,11 +279,11 @@ export default function Inventory() {
               {filtered.map((item) => (
                 <tr key={item._id}>
                   <td>
-                    <p className="font-semibold text-white">{item.name}</p>
+                    <p className="font-semibold text-white">{displayName(item)}</p>
                     <p className="text-[10px] text-gray-500 capitalize">{t(item.category)}</p>
                   </td>
                   <td className={stockClass(item)}>{item.stock}</td>
-                  <td className="text-gray-400">{item.unit}</td>
+                  <td className="text-gray-400">{displayUnit(item.unit)}</td>
                   <td className="text-gray-300">{formatMoney(item.price)}</td>
                   <td className="text-gray-300">{formatMoney(item.stock * item.price)}</td>
                   <td className="text-gray-500">{item.minStock}</td>
@@ -278,6 +312,11 @@ export default function Inventory() {
                           {t("editItem")}
                         </button>
                       )}
+                      {canManage && (
+                        <button onClick={() => setConfirmDelete(item)} className="px-2 py-1 text-[10px] rounded-lg bg-red-500/10 text-red-300 border border-red-500/30 font-bold hover:bg-red-500/25">
+                          {t("deleteBtn")}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -290,7 +329,7 @@ export default function Inventory() {
         </div>
       </div>
 
-      {/*  ADD / EDIT ITEM MODAL  */}
+      {/* ADD / EDIT ITEM MODAL */}
       <Modal isOpen={itemModal} onClose={() => setItemModal(false)} title={editing ? t("editItem") : t("addItem")}>
         <form onSubmit={saveItem} className="space-y-4">
           <div>
@@ -306,7 +345,9 @@ export default function Inventory() {
             </div>
             <div>
               <label className="label-dark">{t("unit")}</label>
-              <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="input-dark" />
+              <select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="input-dark">
+                {UNITS.map((u) => <option key={u} value={u}>{displayUnit(u)}</option>)}
+              </select>
             </div>
             <div>
               <label className="label-dark">{t("pricePerUnit")}</label>
@@ -330,11 +371,11 @@ export default function Inventory() {
         </form>
       </Modal>
 
-      {/*  MOVEMENT MODAL  */}
-      <Modal isOpen={moveModal} onClose={() => setMoveModal(false)} title={`${moveType === "in" ? t("stockIn") : moveType === "out" ? t("stockOut") : t("adjustment")} — ${moveItem?.name || ""}`}>
+      {/* MOVEMENT MODAL */}
+      <Modal isOpen={moveModal} onClose={() => setMoveModal(false)} title={`${moveType === "in" ? t("stockIn") : moveType === "out" ? t("stockOut") : t("adjustment")} — ${displayName(moveItem)}`}>
         <form onSubmit={saveMove} className="space-y-4">
           <div className="p-3 rounded-xl bg-gray-800/50 border border-gray-700/50 text-sm text-gray-300">
-            {t("currentStock")}: <strong className="text-white">{moveItem?.stock}</strong> {moveItem?.unit}
+            {t("currentStock")}: <strong className="text-white">{moveItem?.stock}</strong> {displayUnit(moveItem?.unit || "pcs")}
           </div>
           <div>
             <label className="label-dark">{moveType === "adjust" ? `${t("adjustment")} (+/−)` : t("qty")}</label>
@@ -364,7 +405,23 @@ export default function Inventory() {
         </form>
       </Modal>
 
-      {/*  HISTORY DRAWER  */}
+      {/* DELETE CONFIRM MODAL */}
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title={t("deleteItem")}>
+        <div className="space-y-5">
+          <p className="text-sm text-gray-300 leading-relaxed">{t("confirmDeleteMsg")}</p>
+          <div className="p-3 rounded-xl bg-gray-800/50 border border-gray-700/50 text-white font-bold text-center">
+            {displayName(confirmDelete)}
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => setConfirmDelete(null)} className="flex-1 btn-secondary">{t("cancel")}</button>
+            <button onClick={doDelete} disabled={deleting} className="flex-1 btn-danger">
+              {deleting ? t("loading") : t("deleteBtn")}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* HISTORY DRAWER */}
       {historyItem && (
         <>
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-fade-in" onClick={() => setHistoryItem(null)} />
@@ -372,8 +429,8 @@ export default function Inventory() {
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-extrabold text-white">{historyItem.name}</h2>
-                  <p className="text-xs text-gray-500">{t("currentStock")}: {historyItem.stock} {historyItem.unit}</p>
+                  <h2 className="text-lg font-extrabold text-white">{displayName(historyItem)}</h2>
+                  <p className="text-xs text-gray-500">{t("currentStock")}: {historyItem.stock} {displayUnit(historyItem.unit)}</p>
                 </div>
                 <button onClick={() => setHistoryItem(null)} className="px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm font-bold">×</button>
               </div>
