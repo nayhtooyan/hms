@@ -7,32 +7,24 @@ import { useLanguage } from "./LanguageContext";
 import { useToast } from "./components/ToastContext";
 
 const NotificationsContext = createContext(null);
-const FADE_MS = 3 * 60 * 1000; // solved items fade for 3 min, then delete
+const FADE_MS = 3 * 60 * 1000; // solved rows fade 3 min then delete
 
-/* chime engine  */
-const playChime = (severity) => {
+/*sound files  */
+const soundCache = {};
+const playSound = (severity) => {
   if (localStorage.getItem("notifMuted") === "1") return;
+  const base = `${import.meta.env.BASE_URL || "/"}sounds/`;
+  const file = severity === "critical" ? `${base}critical.mp3` : `${base}notification.mp3`;
   try {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = window.__notifAudioCtx || (window.__notifAudioCtx = new Ctx());
-    if (ctx.state === "suspended") ctx.resume();
-    const notes = severity === "critical" ? [880, 1174.66, 880, 1174.66] : [660, 880];
-    const vol = severity === "critical" ? 0.22 : 0.12;
-    const now = ctx.currentTime;
-    notes.forEach((freq, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = freq;
-      const t0 = now + i * 0.18;
-      g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
-      o.connect(g);
-      g.connect(ctx.destination);
-      o.start(t0);
-      o.stop(t0 + 0.2);
+    let audio = soundCache[file] || (soundCache[file] = new Audio(file));
+    audio.currentTime = 0;
+    audio.play().catch(() => {
+      if (severity === "critical") {
+        const fb = `${base}notification.mp3`;
+        const a2 = soundCache[fb] || (soundCache[fb] = new Audio(fb));
+        a2.currentTime = 0;
+        a2.play().catch(() => {});
+      }
     });
   } catch (e) { /* silent */ }
 };
@@ -62,7 +54,6 @@ export function NotificationsProvider({ children }) {
     });
   };
 
-  /* schedule hard-delete of solved items */
   const scheduleRemoval = useCallback((ids, delayMs) => {
     ids.forEach((rawId) => {
       const id = String(rawId);
@@ -94,7 +85,7 @@ export function NotificationsProvider({ children }) {
       (res.data.notifications || []).forEach((n) => {
         if (n.isResolved && n.resolvedAt) {
           const remaining = new Date(n.resolvedAt).getTime() + FADE_MS - now;
-          if (remaining <= 0) return; // already past fade window
+          if (remaining <= 0) return;
           items.push(n);
           scheduleRemoval([n._id], remaining);
         } else {
@@ -114,7 +105,6 @@ export function NotificationsProvider({ children }) {
     }
   }, [user, load]);
 
-  /*  live: new + resolved  */
   useEffect(() => {
     if (!connected || !user) return;
 
@@ -123,7 +113,7 @@ export function NotificationsProvider({ children }) {
       if (notification.resolvedAt) return;
       setNotifications((prev) => [notification, ...prev].slice(0, 30));
       setUnread((u) => u + 1);
-      playChime(notification.severity);
+      playSound(notification.severity);
       if (notification.severity === "critical") {
         addToast(`${t(notification.titleKey)} — ${fill(notification)}`, "error");
       }
@@ -135,7 +125,6 @@ export function NotificationsProvider({ children }) {
       const affected = notificationsRef.current.filter((n) => idSet.includes(String(n._id)));
       const unreadLost = affected.filter((n) => !n.isRead && !n.isResolved).length;
 
-      // turn into faded "solved" rows
       setNotifications((prev) =>
         prev.map((n) =>
           idSet.includes(String(n._id))

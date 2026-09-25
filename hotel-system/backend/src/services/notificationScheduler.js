@@ -2,11 +2,13 @@ const cron = require("node-cron");
 const Reservation = require("../models/Reservation");
 const Payment = require("../models/Payment");
 const Backup = require("../models/Backup");
-const { createNotification } = require("./notification.service");
+const Notification = require("../models/Notification");
+const { createNotification, resolveNotificationIds } = require("./notification.service");
 
 const dayStr = (d) => d.toISOString().split("T")[0];
+const WARN_WINDOW = 60 * 60 * 1000; // 60 minutes
 
-/* OVERTIME / EXPIRING CHECK-OUT SCAN (every 5 min)  */
+/* OVERTIME SCAN + AUTO-RESOLVE (every 1 min)  */
 const scanOvertime = async () => {
   try {
     const now = new Date();
@@ -14,13 +16,38 @@ const scanOvertime = async () => {
       .populate("roomId", "roomNumber")
       .lean();
 
+    const activeMap = {};
+    active.forEach((res) => { activeMap[String(res._id)] = res; });
+
+    /* AUTO-RESOLVE: checked-out or extended-back-to-future  */
+    const openNotifs = await Notification.find({
+      resolvedAt: null,
+      type: { $in: ["checkout_soon", "checkout_overtime"] }
+    }).select("_id params").lean();
+
+    const resolveIds = [];
+    for (const n of openNotifs) {
+      const rid = String(n.params?.reservationId || "");
+      const res = activeMap[rid];
+      if (!res) {
+        resolveIds.push(n._id); // guest checked out / cancelled
+        continue;
+      }
+      const diffMs = new Date(res.scheduledCheckOut).getTime() - now.getTime();
+      if (diffMs > WARN_WINDOW) {
+        resolveIds.push(n._id); // stay extended → problem solved
+      }
+    }
+    if (resolveIds.length) await resolveNotificationIds(resolveIds);
+
+    /*  CREATE fresh warnings / overtimes  */
     for (const res of active) {
       const out = new Date(res.scheduledCheckOut);
       const diffMs = out.getTime() - now.getTime();
       const roomNo = res.roomId?.roomNumber || "?";
       const guestName = res.guest?.name || "-";
 
-      if (diffMs > 0 && diffMs <= 60 * 60 * 1000) {
+      if (diffMs > 0 && diffMs <= WARN_WINDOW) {
         await createNotification({
           type: "checkout_soon",
           severity: "warning",
@@ -48,12 +75,12 @@ const scanOvertime = async () => {
           severity: "critical",
           titleKey: "notif_checkout_overtime_title",
           messageKey: "notif_checkout_overtime_msg",
-          params: { 
-            room: roomNo, 
-            guest: guestName, 
+          params: {
+            room: roomNo,
+            guest: guestName,
             mins: minsOver,
             reservationId: String(res._id)
-        },
+          },
           roles: ["admin", "manager", "reception"],
           link: "/room-board",
           dedupeKey: `checkout-over-${res._id}-${dayStr(now)}-h${hourBucket}`,
@@ -66,12 +93,27 @@ const scanOvertime = async () => {
   }
 };
 
-/* BACKUP HEALTH (hourly)  */
+/* BACKUP HEALTH + AUTO-RESOLVE (every 5 min)  */
 const scanBackup = async () => {
   try {
     const now = new Date();
     const last = await Backup.findOne({ status: "completed" }).sort({ createdAt: -1 }).lean();
     const lastFailed = await Backup.findOne({ status: "failed" }).sort({ createdAt: -1 }).lean();
+
+    const healthy =
+      last &&
+      now - new Date(last.createdAt) <= 24 * 3600 * 1000 &&
+      (!lastFailed || new Date(last.createdAt) > new Date(lastFailed.createdAt));
+
+    if (healthy) {
+      // problem solved → fade out any backup alerts
+      const open = await Notification.find({
+        resolvedAt: null,
+        type: { $in: ["backup_overdue", "backup_failed"] }
+      }).select("_id").lean();
+      if (open.length) await resolveNotificationIds(open.map((o) => o._id));
+      return;
+    }
 
     if (!last || now - new Date(last.createdAt) > 24 * 3600 * 1000) {
       await createNotification({
@@ -109,7 +151,7 @@ const scanBackup = async () => {
   }
 };
 
-/*  MORNING DIGESTS (daily 9:00) */
+/* MORNING DIGESTS (daily 9:00) */
 const sendDigests = async () => {
   try {
     const now = new Date();
@@ -160,16 +202,16 @@ const sendDigests = async () => {
 };
 
 const init = () => {
-  cron.schedule("*/5 * * * *", scanOvertime);
-  cron.schedule("0 * * * *", scanBackup);
-  cron.schedule("0 9 * * *", sendDigests);
+  cron.schedule("* * * * *", scanOvertime);     // every 1 min
+  cron.schedule("*/5 * * * *", scanBackup);     // every 5 min
+  cron.schedule("0 9 * * *", sendDigests);      // daily 9 AM
 
   setTimeout(() => {
     scanOvertime();
     scanBackup();
   }, 5000);
 
-  console.log("[NotifyWatcher] scheduled (overtime 5min / backup hourly / digest 9AM)");
+  console.log("[NotifyWatcher] scheduled (overtime 1min / backup 5min / digest 9AM)");
 };
 
 module.exports = { init };

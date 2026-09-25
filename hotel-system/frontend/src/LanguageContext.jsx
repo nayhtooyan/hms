@@ -434,7 +434,12 @@ const translations = {
     notif_digest_ops_msg: "Arrivals {arrivals} • Departures {departures}",
     mute: "Mute",
     unmute: "Unmute",
-    solved: "Solved"
+    solved: "Solved",
+    soundOn: "Sound: On",
+    soundOff: "Sound: Off",
+    needsAction: "Needs Action",
+    solvedCaption: "Solved · clears in 3 min",
+    markAllRead: 'Make all read'
   },
 
   my: {
@@ -808,9 +813,9 @@ const translations = {
     receiptNo: "ပြေစာနံပါတ်",
 
     // BACKUPS
-    backupsTitle: "အရန်သိမ်းခြင်းနှင့် ပြန်လည်ရယူခြင်း",
-    backupsSubtitle: "ဒေတာဘေ့စ် အရန်သိမ်းမှုများကို ဖန်တီး၊ ဒေါင်းလုဒ်နှင့် ပြန်လည်ရယူပါ။",
-    createBackupBtn: "အရန်သိမ်းမှု ဖန်တီးရန်",
+    backupsTitle: "အရန်သိမ်းဆည်းခြင်းနှင့် ပြန်လည်ရယူခြင်း",
+    backupsSubtitle: "ဒေတာဘေ့စ် အရန်သိမ်းဆည်းမှုများကို ဖန်တီး၊ ဒေါင်းလုဒ်နှင့် ပြန်လည်ရယူပါ။",
+    createBackupBtn: "အရန်သိမ်းဆည်းမှု ဖန်တီးရန်",
     creating: "ဖန်တီးနေသည်...",
     restoreFromFile: "ဖိုင်မှ ပြန်လည်ရယူရန်",
     restoreWarning: "သတိပေးချက်: ယခုလက်ရှိ ဒေတာအားလုံးကို အစားထိုးပါမည်။",
@@ -820,8 +825,8 @@ const translations = {
     filename: "ဖိုင်အမည်",
     size: "အရွယ်အစား",
     download: "ဒေါင်းလုဒ်",
-    backupCreated: "အရန်သိမ်းမှုကို အောင်မြင်စွာ ဖန်တီးပြီးပါပြီ",
-    backupDeleted: "အရန်သိမ်းမှုကို ဖျက်ပြီးပါပြီ",
+    backupCreated: "အရန်သိမ်းဆည်းမှုကို အောင်မြင်စွာ ဖန်တီးပြီးပါပြီ",
+    backupDeleted: "အရန်သိမ်းဆည်းမှုကို ဖျက်ပြီးပါပြီ",
     restoreCompleted:"ဒေတာ ပြန်လည်ရယူခြင်း အောင်မြင်စွာ ပြီးစီးပါပြီ",
     chooseFile: "ဖိုင် ရွေးချယ်ရန်",
     pleaseConfirm: "အတည်ပြုပေးပါ",
@@ -872,6 +877,11 @@ const translations = {
     mute: "အသံပိတ်",
     unmute: "အသံဖွင့်",
     solved: "ဖြေရှင်းပြီး",
+    soundOn: "အသံ: ဖွင့်",
+    soundOff: "အသံ: ပိတ်",
+    needsAction: "လုပ်ဆောင်ရန်",
+    solvedCaption: "ဖြေရှင်းပြီး · ၃ မိနစ်အတွင်း ပျောက်မည်",
+    markAllRead: 'အားလုံးဖတ်ပြီးသားလုပ်မည်'
   },
 };
 
