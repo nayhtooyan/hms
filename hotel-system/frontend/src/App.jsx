@@ -21,6 +21,7 @@ import Settings from "./pages/Settings.jsx";
 import Reports from "./pages/Reports.jsx";
 import Backups from "./pages/Backups.jsx";
 import AuditLogs from "./pages/AuditLogs.jsx";
+import Inventory from "./pages/Inventory";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -63,6 +64,7 @@ export default function App() {
                       <Route path="reports" element={<Reports />} />
                       <Route path="backups" element={<Backups />} />
                       <Route path="audit" element={<AuditLogs />} />
+                      <Route path="/inventory" element={<Inventory />} />
                       <Route path="*" element={<Navigate to="/" replace />} />
                     </Route>
                   </Routes>

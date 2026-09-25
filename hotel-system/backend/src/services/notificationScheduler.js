@@ -3,6 +3,7 @@ const Reservation = require("../models/Reservation");
 const Payment = require("../models/Payment");
 const Backup = require("../models/Backup");
 const Notification = require("../models/Notification");
+const InventoryItem = require("../models/InventoryItem");
 const { createNotification, resolveNotificationIds } = require("./notification.service");
 
 const dayStr = (d) => d.toISOString().split("T")[0];
@@ -201,17 +202,64 @@ const sendDigests = async () => {
   }
 };
 
+/* LOW STOCK SCAN (every 30 min)  */
+const scanLowStock = async () => {
+  try {
+    const now = new Date();
+    const items = await InventoryItem.find({ active: true }).lean();
+    const healthyIds = [];
+
+    for (const item of items) {
+      if (item.minStock > 0 && item.stock <= item.minStock) {
+        await createNotification({
+          type: "low_stock",
+          severity: "warning",
+          titleKey: "notif_lowstock_title",
+          messageKey: "notif_lowstock_msg",
+          params: {
+            item: item.name,
+            stock: item.stock,
+            min: item.minStock,
+            unit: item.unit,
+            itemId: String(item._id)
+          },
+          roles: ["admin", "manager"],
+          link: "/inventory",
+          dedupeKey: `lowstock-${item._id}-${dayStr(now)}`,
+          expiresAt: new Date(now.getTime() + 24 * 3600 * 1000)
+        });
+      } else {
+        healthyIds.push(String(item._id));
+      }
+    }
+
+    // auto-resolve alerts for restocked items
+    if (healthyIds.length) {
+      const open = await Notification.find({
+        resolvedAt: null,
+        type: "low_stock",
+        "params.itemId": { $in: healthyIds }
+      }).select("_id").lean();
+      if (open.length) await resolveNotificationIds(open.map((o) => o._id));
+    }
+  } catch (e) {
+    console.error("[NotifyWatcher] low stock scan:", e.message);
+  }
+};
+
 const init = () => {
-  cron.schedule("* * * * *", scanOvertime);     // every 1 min
-  cron.schedule("*/5 * * * *", scanBackup);     // every 5 min
-  cron.schedule("0 9 * * *", sendDigests);      // daily 9 AM
+  cron.schedule("* * * * *", scanOvertime);
+  cron.schedule("*/5 * * * *", scanBackup);
+  cron.schedule("*/30 * * * *", scanLowStock);
+  cron.schedule("0 9 * * *", sendDigests);
 
   setTimeout(() => {
     scanOvertime();
     scanBackup();
+    scanLowStock();
   }, 5000);
 
-  console.log("[NotifyWatcher] scheduled (overtime 1min / backup 5min / digest 9AM)");
+  console.log("[NotifyWatcher] scheduled (overtime 1min / backup 5min / lowstock 30min / digest 9AM)");
 };
 
 module.exports = { init };

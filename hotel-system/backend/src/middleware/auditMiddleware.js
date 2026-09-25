@@ -11,6 +11,7 @@ const ENTITY_MAP = [
   { prefix: "/housekeeping", model: "HousekeepingTask", entity: "Housekeeping" },
   { prefix: "/settings", model: "Settings", entity: "Settings" },
   { prefix: "/backups", model: "Backup", entity: "Backup" },
+  { prefix: "/inventory", model: "InventoryItem", entity: "Inventory" }
 ];
 
 const SKIP_ENTITIES = ["Room"];

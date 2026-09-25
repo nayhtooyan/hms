@@ -14,6 +14,7 @@ const reportsRoutes = require("./routes/reports.routes");
 const backupRoutes = require("./routes/backup.routes");
 const auditRoutes = require("./routes/audit.routes");
 const autoAudit = require("./middleware/auditMiddleware");
+const inventoryRoutes = require("./routes/inventory.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const path = require("path");
 
@@ -42,6 +43,7 @@ app.use("/api/settings", settingRoutes);
 app.use("/api/reports", reportsRoutes);
 app.use("/api/backups", backupRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/inventory", inventoryRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 app.use((req, res) => {
